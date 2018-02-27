@@ -17,7 +17,7 @@ import static org.junit.Assert.fail;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestWithoutMainClass {
-    private static String dir = MaiLogger.class.getResource("").getPath() + "logs";
+    private static String dir = MaiLogger.class.getResource("").getPath() + "/../logs";
     private static String[] exp;
     private static String[] expAdd;
     private static String expAll;

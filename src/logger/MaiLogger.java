@@ -44,7 +44,7 @@ public class MaiLogger {
 	/**
 	 * The directory in which the log files are saved.
 	 */
-	private static String directory = MaiLogger.class.getResource("").getPath() + "logs";
+	private static String directory = MaiLogger.class.getResource("").getPath() + "/../logs";
 
 	/**
 	 * The maximum number of files that are created by log rotation.

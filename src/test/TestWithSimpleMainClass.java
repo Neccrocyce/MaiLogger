@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestWithSimpleMainClass {
     private static MainClass mc;
-    private static String dir = MaiLogger.class.getResource("").getPath() + "logs";
+    private static String dir = MaiLogger.class.getResource("").getPath() + "/../logs";
 
     @BeforeClass
     public static void setUp () {
