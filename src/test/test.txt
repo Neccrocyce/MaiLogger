@@ -1,0 +1,35 @@
+cases:
+---------
+mainclass set
+    maxlogs
+    rotations
+
+mainclass not set
+
+mainclass == null
+→ nullpointer exception
+
+tests:
+-----
+loginfo
+→ test logfile
+→ test temp log
+→ test sendlog
+→ test senderrmsg
+→ test directory content
+
+logwarning
+
+logerror
+
+logcritical
+
+logmix
+
+rotate
+
+clearlog
+
+load
+
+getlog
