@@ -1,6 +1,6 @@
 package test;
 
-import Logger.MaiLog;
+import logger.MaiLog;
 
 import java.util.ArrayList;
 import java.util.List;

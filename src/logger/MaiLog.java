@@ -1,4 +1,4 @@
-package Logger;
+package logger;
 
 /**
  * This interface should be implemented by the main class of the application. it provides a method that is called when a

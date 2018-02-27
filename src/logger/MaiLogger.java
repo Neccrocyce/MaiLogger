@@ -1,8 +1,7 @@
-package Logger;
+package logger;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +66,6 @@ public class MaiLogger {
 	 * Sets the values which are required to use MaiLogger. Therefore this method has to be called before
 	 * using any other method of this class. If it hasn't been, a warning about
 	 * the missing setup of {@code MaiLogger} is logged, every time an event is logged.
-	 * IMPORTANT: this method overrides the latest log file. Make sure to rotate logs before closing the application.
 	 *
 	 *
 	 * <pre>
@@ -102,7 +100,6 @@ public class MaiLogger {
 	 * Sets the values which are required to use MaiLogger. Therefore this method has to be called before
 	 * using any other method of this class. If it hasn't been, a warning about
 	 * the missing setup of {@code MaiLogger} is logged, every time an event is logged.
-	 * IMPORTANT: this method overrides the latest log file. Make sure to rotate logs before closing the application.
 	 * It sets {@code maxLogs}, {@code rotations} and {@code directory} to default.
 	 *
 	 * @param mainClass The class which implements {@code MaiLog} interface

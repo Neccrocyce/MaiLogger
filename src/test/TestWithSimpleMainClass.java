@@ -1,6 +1,6 @@
 package test;
 
-import Logger.MaiLogger;
+import logger.MaiLogger;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
 
