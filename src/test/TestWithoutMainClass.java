@@ -45,12 +45,12 @@ public class TestWithoutMainClass {
         }
         expAll.insert(338, expAdd[0] + "\n");
         expAll.insert(381, expAdd[1] + "\n");
-        expAll.deleteCharAt(expAll.length() - 1);
         TestWithoutMainClass.expAll = expAll.toString();
     }
 
-    @After
-    public void cleanUp () {
+    @Before
+    public void init () {
+        MaiLogger.clearLog();
         List<File> files = new ArrayList<>();
         try {
             Files.list(new File(dir).toPath()).forEach(s -> files.add(new File(s.toString())));
@@ -62,22 +62,17 @@ public class TestWithoutMainClass {
         }
     }
 
-    @Before
-    public void init() {
-        MaiLogger.clearLog();
-    }
-
     @Test
     public void test1LogInfo () {
         MaiLogger.logInfo("test1");
-        String exp = "WARNING: MaiLogger has not been set up yet\nINFO: test1";
+        String exp = "WARNING: MaiLogger has not been set up yet\nINFO: test1\n";
 
         assertEquals(exp, remTime(MaiLogger.getLogAll()));
         assertEquals(exp, remTime(readFile(dir + "/Log.log")));
         assertEquals(1, new File(dir).listFiles().length);
 
-        assertEquals("INFO: test1", remTime(MaiLogger.getLog(true, false, false, false)));
-        assertEquals("WARNING: MaiLogger has not been set up yet", remTime(MaiLogger.getLog(false, true, false, false)));
+        assertEquals("INFO: test1\n", remTime(MaiLogger.getLog(true, false, false, false)));
+        assertEquals("WARNING: MaiLogger has not been set up yet\n", remTime(MaiLogger.getLog(false, true, false, false)));
         assertEquals("", MaiLogger.getLog(false, false, true, false));
         assertEquals("", MaiLogger.getLog(false, false, false, true));
     }
@@ -85,7 +80,7 @@ public class TestWithoutMainClass {
     @Test
     public void test2LogWarning () {
         MaiLogger.logWarning("test1");
-        String exp = "WARNING: MaiLogger has not been set up yet\nWARNING: test1";
+        String exp = "WARNING: MaiLogger has not been set up yet\nWARNING: test1\n";
 
         assertEquals(exp, remTime(MaiLogger.getLogAll()));
         assertEquals(exp, remTime(readFile(dir + "/Log.log")));
@@ -100,15 +95,15 @@ public class TestWithoutMainClass {
     @Test
     public void test3LogError () {
         MaiLogger.logError("test1");
-        String exp = "WARNING: MaiLogger has not been set up yet\nERROR: test1";
+        String exp = "WARNING: MaiLogger has not been set up yet\nERROR: test1\n";
 
         assertEquals(exp, remTime(MaiLogger.getLogAll()));
         assertEquals(exp, remTime(readFile(dir + "/Log.log")));
         assertEquals(1, new File(dir).listFiles().length);
 
-        assertEquals("ERROR: test1", remTime(MaiLogger.getLog(false, false, true, false)));
+        assertEquals("ERROR: test1\n", remTime(MaiLogger.getLog(false, false, true, false)));
         assertEquals("", MaiLogger.getLog(true, false, false, false));
-        assertEquals("WARNING: MaiLogger has not been set up yet", remTime(MaiLogger.getLog(false, true, false, false)));
+        assertEquals("WARNING: MaiLogger has not been set up yet\n", remTime(MaiLogger.getLog(false, true, false, false)));
         assertEquals("", MaiLogger.getLog(false, false, false, true));
     }
 
@@ -118,15 +113,15 @@ public class TestWithoutMainClass {
         String[] exp = new String[] {"WARNING: MaiLogger has not been set up yet",
                 "CRITICAL: test1",
                 "CRITICAL: Cannot stop application; MaiLogger has not been set up yet"};
-        String expAll = exp[0] + "\n" + exp[1] + "\n" + exp[0] + "\n" + exp[2];
+        String expAll = exp[0] + "\n" + exp[1] + "\n" + exp[0] + "\n" + exp[2] + "\n";
         assertEquals(expAll, remTime(MaiLogger.getLogAll()));
         assertEquals(expAll, remTime(readFile(dir + "/Log.log")));
         assertEquals(1, new File(dir).listFiles().length);
 
-        assertEquals(exp[1]+ "\n" + exp[2], remTime(MaiLogger.getLog(false, false, false, true)));
+        assertEquals(exp[1]+ "\n" + exp[2] + "\n", remTime(MaiLogger.getLog(false, false, false, true)));
         assertEquals("", MaiLogger.getLog(true, false, false, false));
         assertEquals("", MaiLogger.getLog(false, false, true, false));
-        assertEquals(exp[0] + "\n" + exp[0], remTime(MaiLogger.getLog(false, true, false, false)));
+        assertEquals(exp[0] + "\n" + exp[0] + "\n", remTime(MaiLogger.getLog(false, true, false, false)));
     }
 
     @Test
@@ -145,7 +140,7 @@ public class TestWithoutMainClass {
         assertEquals(expAll, remTime(readFile(dir + "/Log.log")));
         assertEquals(1, new File(dir).listFiles().length);
 
-        String expInfo = exp[0] + "\n" + exp[1] + "\n" + exp[4] + "\n" + exp[7];
+        String expInfo = exp[0] + "\n" + exp[1] + "\n" + exp[4] + "\n" + exp[7] + "\n";
         StringBuilder expWarning = new StringBuilder();
         for (int i = 0; i < 10; i++) {
             if (i == 2 || i > 7) {
@@ -158,9 +153,8 @@ public class TestWithoutMainClass {
                 expWarning.append(expAdd[0]).append("\n");
             }
         }
-        expWarning.deleteCharAt(expWarning.length() - 1);
-        String expError = exp[3] + "\n" + exp[6];
-        String expCritical = exp[5] + "\n" + expAdd[1];
+        String expError = exp[3] + "\n" + exp[6] + "\n";
+        String expCritical = exp[5] + "\n" + expAdd[1] + "\n";
         assertEquals(expInfo, remTime(MaiLogger.getLog(true, false, false, false)));
         assertEquals(expWarning.toString(), remTime(MaiLogger.getLog(false, true, false, false)));
         assertEquals(expError, remTime(MaiLogger.getLog(false, false, true, false)));
@@ -170,16 +164,16 @@ public class TestWithoutMainClass {
     @Test
     public void test6ClearLog () {
         MaiLogger.logInfo("test1");
-        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1", remTime(MaiLogger.getLogAll()));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1\n", remTime(MaiLogger.getLogAll()));
         MaiLogger.clearLog();
         assertEquals("", remTime(MaiLogger.getLogAll()));
         MaiLogger.logWarning("test2");
         MaiLogger.logError("test3");
-        assertEquals("WARNING: MaiLogger has not been set up yet\nWARNING: test2\nWARNING: MaiLogger has not been set up yet\nERROR: test3", remTime(MaiLogger.getLogAll()));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nWARNING: test2\nWARNING: MaiLogger has not been set up yet\nERROR: test3\n", remTime(MaiLogger.getLogAll()));
         MaiLogger.clearLog();
         assertEquals("", remTime(MaiLogger.getLogAll()));
         MaiLogger.logCritical("test4");
-        assertEquals("WARNING: MaiLogger has not been set up yet\nCRITICAL: test4\nWARNING: MaiLogger has not been set up yet\nCRITICAL: Cannot stop application; MaiLogger has not been set up yet", remTime(MaiLogger.getLogAll()));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nCRITICAL: test4\nWARNING: MaiLogger has not been set up yet\nCRITICAL: Cannot stop application; MaiLogger has not been set up yet\n", remTime(MaiLogger.getLogAll()));
         MaiLogger.clearLog();
         assertEquals("", remTime(MaiLogger.getLogAll()));
     }
@@ -205,38 +199,38 @@ public class TestWithoutMainClass {
     }
 
     @Test
-    public void testRotate () {
+    public void test8Rotate () {
         MaiLogger.logInfo("test1");
         assertEquals(1, new File(dir).listFiles().length);
-        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1", remTime(readFile(dir + "/" + "Log.log")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1\n", remTime(readFile(dir + "/" + "Log.log")));
         MaiLogger.rotate();
         MaiLogger.logWarning("test2");
         MaiLogger.logInfo("test3");
         assertEquals(2, new File(dir).listFiles().length);
-        assertEquals("WARNING: MaiLogger has not been set up yet\nWARNING: test2\nWARNING: MaiLogger has not been set up yet\nINFO: test3", remTime(readFile(dir + "/" + "Log.log")));
-        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1", remTime(readFile(dir + "/" + "Log.log.1")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nWARNING: test2\nWARNING: MaiLogger has not been set up yet\nINFO: test3\n", remTime(readFile(dir + "/" + "Log.log")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1\n", remTime(readFile(dir + "/" + "Log.log.1")));
         MaiLogger.rotate();
         MaiLogger.logError("test4");
         MaiLogger.logError("test5");
         MaiLogger.logInfo("test6");
         assertEquals(3, new File(dir).listFiles().length);
-        assertEquals("WARNING: MaiLogger has not been set up yet\nERROR: test4\nWARNING: MaiLogger has not been set up yet\nERROR: test5\nWARNING: MaiLogger has not been set up yet\nINFO: test6", remTime(readFile(dir + "/" + "Log.log")));
-        assertEquals("WARNING: MaiLogger has not been set up yet\nWARNING: test2\nWARNING: MaiLogger has not been set up yet\nINFO: test3", remTime(readFile(dir + "/" + "Log.log.1")));
-        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1", remTime(readFile(dir + "/" + "Log.log.2")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nERROR: test4\nWARNING: MaiLogger has not been set up yet\nERROR: test5\nWARNING: MaiLogger has not been set up yet\nINFO: test6\n", remTime(readFile(dir + "/" + "Log.log")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nWARNING: test2\nWARNING: MaiLogger has not been set up yet\nINFO: test3\n", remTime(readFile(dir + "/" + "Log.log.1")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1\n", remTime(readFile(dir + "/" + "Log.log.2")));
         MaiLogger.rotate();
         assertEquals(4, new File(dir).listFiles().length);
         assertEquals("", remTime(readFile(dir + "/" + "Log.log")));
-        assertEquals("WARNING: MaiLogger has not been set up yet\nERROR: test4\nWARNING: MaiLogger has not been set up yet\nERROR: test5\nWARNING: MaiLogger has not been set up yet\nINFO: test6", remTime(readFile(dir + "/" + "Log.log.1")));
-        assertEquals("WARNING: MaiLogger has not been set up yet\nWARNING: test2\nWARNING: MaiLogger has not been set up yet\nINFO: test3", remTime(readFile(dir + "/" + "Log.log.2")));
-        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1", remTime(readFile(dir + "/" + "Log.log.3")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nERROR: test4\nWARNING: MaiLogger has not been set up yet\nERROR: test5\nWARNING: MaiLogger has not been set up yet\nINFO: test6\n", remTime(readFile(dir + "/" + "Log.log.1")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nWARNING: test2\nWARNING: MaiLogger has not been set up yet\nINFO: test3\n", remTime(readFile(dir + "/" + "Log.log.2")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1\n", remTime(readFile(dir + "/" + "Log.log.3")));
         MaiLogger.rotate();
         MaiLogger.logCritical("test7");
         assertEquals(5, new File(dir).listFiles().length);
-        assertEquals("WARNING: MaiLogger has not been set up yet\nCRITICAL: test7\nWARNING: MaiLogger has not been set up yet\nCRITICAL: Cannot stop application; MaiLogger has not been set up yet", remTime(readFile(dir + "/" + "Log.log")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nCRITICAL: test7\nWARNING: MaiLogger has not been set up yet\nCRITICAL: Cannot stop application; MaiLogger has not been set up yet\n", remTime(readFile(dir + "/" + "Log.log")));
         assertEquals("", remTime(readFile(dir + "/" + "Log.log.1")));
-        assertEquals("WARNING: MaiLogger has not been set up yet\nERROR: test4\nWARNING: MaiLogger has not been set up yet\nERROR: test5\nWARNING: MaiLogger has not been set up yet\nINFO: test6", remTime(readFile(dir + "/" + "Log.log.2")));
-        assertEquals("WARNING: MaiLogger has not been set up yet\nWARNING: test2\nWARNING: MaiLogger has not been set up yet\nINFO: test3", remTime(readFile(dir + "/" + "Log.log.3")));
-        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1", remTime(readFile(dir + "/" + "Log.log.4")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nERROR: test4\nWARNING: MaiLogger has not been set up yet\nERROR: test5\nWARNING: MaiLogger has not been set up yet\nINFO: test6\n", remTime(readFile(dir + "/" + "Log.log.2")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nWARNING: test2\nWARNING: MaiLogger has not been set up yet\nINFO: test3\n", remTime(readFile(dir + "/" + "Log.log.3")));
+        assertEquals("WARNING: MaiLogger has not been set up yet\nINFO: test1\n", remTime(readFile(dir + "/" + "Log.log.4")));
     }
 
     @Test
@@ -257,9 +251,6 @@ public class TestWithoutMainClass {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        if (content.length() > 0) {
-            content.deleteCharAt(content.length() - 1);
-        }
         return content.toString();
     }
 
@@ -272,9 +263,6 @@ public class TestWithoutMainClass {
             Arrays.stream(exp.split("\n")).forEach(s -> exp2.append(s.substring(18)).append("\n"));
         } catch (IndexOutOfBoundsException e) {
             return "Failed to remove time in expression:\n" + exp;
-        }
-        if (exp2.length() > 0) {
-            exp2.deleteCharAt(exp2.length() - 1);
         }
         return exp2.toString();
     }

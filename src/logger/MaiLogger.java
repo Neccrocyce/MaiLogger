@@ -2,6 +2,7 @@ package logger;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ public class MaiLogger {
 
 	/**
 	 * The number of maximum logged events. If {@code maxLogs} is -1 this setting is ignored. If there are more logged events, then the oldest one will be deleted
-	 * until the number of maximum logged events is equals {@code maxLogs}
+	 * until the number of maximum logged events is equals {@code maxLogs}.
 	 */
 	private static int maxLogs = -1;
 
@@ -71,9 +72,10 @@ public class MaiLogger {
 	 * <pre>
 	 * @param mainClass The class which implements {@code MaiLog} interface
 	 * @param maxLogs The number of maximum logged events
-	 *        -1: infinite
+	 *        -1: infinite (recommend)
 	 *        default: -1
-	 * @param rotations The maximum number of files that are created by log rotation
+	 * @param rotations The maximum number of files that are created by log rotation.
+	 *                  It is recommend to set it to -1. Otherwise MaiLogger is less efficient, because of creating a new log file every time an event is logged, instead of adding the event to the end of the existing log file.
 	 *        -1: infinite
 	 *        default -1
 	 * @param time Decides whether the time of logging the event is logged, too
@@ -113,9 +115,14 @@ public class MaiLogger {
 	}
 
 	private static void logMissingMainClass () {
-		log.add(new Log(1,"MaiLogger has not been set up yet"));
+		Log missingMC = new Log(1,"MaiLogger has not been set up yet");
+		log.add(missingMC);
+		try {
+			addLineToFile(missingMC.getLog(time));
+		} catch (NoSuchFileException e) {
+			//save();
+		}
 		reduceLog();
-		save();
 	}
 
 	/**
@@ -162,9 +169,13 @@ public class MaiLogger {
 		} else {
 			mainClass.sendLog(entry.getLog(time));
 		}
-		log.add(entry);		
+		log.add(entry);
+		try {
+			addLineToFile(entry.getLog(time));
+		} catch (NoSuchFileException e) {
+			save();
+		}
 		reduceLog();
-		save();
 	}
 
 	/*
@@ -172,9 +183,14 @@ public class MaiLogger {
 	number of logs is equals {@code maxLogs}
 	 */
 	private static void reduceLog () {
+		if (maxLogs == -1 || log.size() <= maxLogs) {
+			return;
+		}
+
 		while (maxLogs != -1 && log.size() > maxLogs) {
 			log.remove(0);
 		}
+		save();
 	}
 
 	/**
@@ -229,10 +245,6 @@ public class MaiLogger {
 	public static String getLog (boolean info, boolean warning, boolean error, boolean critical) {
 		StringBuilder content = new StringBuilder();
 		log.stream().filter(e -> (e.getGroup() == 0 && info) || (e.getGroup() == 1 && warning) || (e.getGroup() == 2 && error) || (e.getGroup() == 3 && critical)).forEach(e -> content.append(e.getLog(time)).append("\n"));
-
-		if (content.length() > 0) {
-			content.deleteCharAt(content.length() - 1);
-		}
 		return content.toString();
 	}
 
@@ -255,11 +267,12 @@ public class MaiLogger {
 			}
 			w = new BufferedWriter(new FileWriter(logFile));
 			String[] content = getLogAll().split("\n");
-			for(int i = 0; i < content.length - 1; i++) {
-				w.write(content[i]);
-				w.newLine();
+			if (!content[0].equals("")) {
+				for (int i = 0; i < content.length; i++) {
+					w.write(content[i]);
+					w.newLine();
+				}
 			}
-			w.write(content[content.length - 1]);
 			new File(logFile + ".backup").delete();
 		} catch (IOException e) {
 			if (mainClass == null) {
@@ -273,6 +286,22 @@ public class MaiLogger {
 			} catch (IOException | NullPointerException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+
+	private static void addLineToFile (String line) throws NoSuchFileException {
+		String logfile = directory + "/" + fileName + ".log";
+		if (!new File(logfile).exists()) {
+			throw new NoSuchFileException(logfile + "does not exist");
+		}
+
+		FileWriter wout = null;
+		try {
+			wout = new FileWriter(new File(logfile),true);
+			wout.append(line + "\n");
+			wout.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 

@@ -36,9 +36,6 @@ public class MainClass implements MaiLog {
         for (String s: log) {
             out.append(s + "\n");
         }
-        if (out.length() > 0) {
-            out.deleteCharAt(out.length() - 1);
-        }
         return out.toString();
     }
 

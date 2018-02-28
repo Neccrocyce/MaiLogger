@@ -1,5 +1,6 @@
 package test;
 
+import logger.MaiLog;
 import logger.MaiLogger;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
@@ -24,8 +25,9 @@ public class TestWithSimpleMainClass {
         MaiLogger.setUp(mc);
     }
 
-    @After
+
     public void cleanUp () {
+        MaiLogger.clearLog();
         List<File> files = new ArrayList<>();
         try {
             Files.list(new File(dir).toPath()).forEach(s -> files.add(new File(s.toString())));
@@ -35,19 +37,20 @@ public class TestWithSimpleMainClass {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        MaiLogger.setUp(mc);
     }
 
     @Before
     public void init() {
-        MaiLogger.clearLog();
+        cleanUp();
         mc.clearLog();
         mc.stopped = false;
     }
 
     @Test
-    public void test1LogInfo1 () {
+    public void test1LogInfo () {
         MaiLogger.logInfo("test1");
-        String exp = "INFO: test1";
+        String exp = "INFO: test1\n";
 
         assertEquals(exp, MaiLogger.getLogAll().substring(18));
         assertEquals(exp, readFile(dir + "/mainclass.log").substring(18));
@@ -64,7 +67,7 @@ public class TestWithSimpleMainClass {
     @Test
     public void test2LogWarning () {
         MaiLogger.logWarning("test1");
-        String exp = "WARNING: test1";
+        String exp = "WARNING: test1\n";
 
         assertEquals(exp, MaiLogger.getLogAll().substring(18));
         assertEquals(exp, readFile(dir + "/mainclass.log").substring(18));
@@ -81,7 +84,7 @@ public class TestWithSimpleMainClass {
     @Test
     public void test3LogError () {
         MaiLogger.logError("test1");
-        String exp = "ERROR: test1";
+        String exp = "ERROR: test1\n";
 
         assertEquals(exp, MaiLogger.getLogAll().substring(18));
         assertEquals(exp, readFile(dir + "/mainclass.log").substring(18));
@@ -98,7 +101,7 @@ public class TestWithSimpleMainClass {
     @Test
     public void test4LogCritical () {
         MaiLogger.logCritical("test1");
-        String exp = "CRITICAL: test1";
+        String exp = "CRITICAL: test1\n";
 
         assertEquals(exp, MaiLogger.getLogAll().substring(18));
         assertEquals(exp, readFile(dir + "/mainclass.log").substring(18));
@@ -135,17 +138,17 @@ public class TestWithSimpleMainClass {
                 + "ERROR: test7\n"
                 + "INFO: test8\n"
                 + "WARNING: test9\n"
-                + "WARNING: test10";
+                + "WARNING: test10\n";
         assertEquals(exp, remTime(MaiLogger.getLogAll()));
         assertEquals(exp, remTime(readFile(dir + "/mainclass.log")));
         assertEquals(exp, remTime(mc.getLog()));
         assertEquals("", mc.getErrLog());
         assertEquals(1, new File(dir).listFiles().length);
 
-        String expInfo = "INFO: test1\nINFO: test2\nINFO: test5\nINFO: test8";
-        String expWarning = "WARNING: test3\nWARNING: test9\nWARNING: test10";
-        String expError = "ERROR: test4\nERROR: test7";
-        String expCritical = "CRITICAL: test6";
+        String expInfo = "INFO: test1\nINFO: test2\nINFO: test5\nINFO: test8\n";
+        String expWarning = "WARNING: test3\nWARNING: test9\nWARNING: test10\n";
+        String expError = "ERROR: test4\nERROR: test7\n";
+        String expCritical = "CRITICAL: test6\n";
         assertEquals(expInfo, remTime(MaiLogger.getLog(true, false, false, false)));
         assertEquals(expWarning, remTime(MaiLogger.getLog(false, true, false, false)));
         assertEquals(expError, remTime(MaiLogger.getLog(false, false, true, false)));
@@ -157,17 +160,17 @@ public class TestWithSimpleMainClass {
                 + "INFO: test5\n"
                 + "INFO: test8\n"
                 + "WARNING: test9\n"
-                + "WARNING: test10";
+                + "WARNING: test10\n";
         String expWaCr = "WARNING: test3\n"
                 + "CRITICAL: test6\n"
                 + "WARNING: test9\n"
-                + "WARNING: test10";
+                + "WARNING: test10\n";
         String expInEr = "INFO: test1\n"
                 + "INFO: test2\n"
                 + "ERROR: test4\n"
                 + "INFO: test5\n"
                 + "ERROR: test7\n"
-                + "INFO: test8";
+                + "INFO: test8\n";
         assertEquals(expInWa, remTime(MaiLogger.getLog(true, true, false, false)));
         assertEquals(expWaCr, remTime(MaiLogger.getLog(false, true, false, true)));
         assertEquals(expInEr, remTime(MaiLogger.getLog(true, false, true, false)));
@@ -176,16 +179,16 @@ public class TestWithSimpleMainClass {
     @Test
     public void test6ClearLog () {
         MaiLogger.logInfo("test1");
-        assertEquals("INFO: test1", remTime(MaiLogger.getLogAll()));
+        assertEquals("INFO: test1\n", remTime(MaiLogger.getLogAll()));
         MaiLogger.clearLog();
         assertEquals("", MaiLogger.getLogAll());
         MaiLogger.logWarning("test2");
         MaiLogger.logError("test3");
-        assertEquals("WARNING: test2\nERROR: test3", remTime(MaiLogger.getLogAll()));
+        assertEquals("WARNING: test2\nERROR: test3\n", remTime(MaiLogger.getLogAll()));
         MaiLogger.clearLog();
         assertEquals("", MaiLogger.getLogAll());
         MaiLogger.logCritical("test4");
-        assertEquals("CRITICAL: test4", remTime(MaiLogger.getLogAll()));
+        assertEquals("CRITICAL: test4\n", remTime(MaiLogger.getLogAll()));
         MaiLogger.clearLog();
         assertEquals("", MaiLogger.getLogAll());
     }
@@ -212,7 +215,7 @@ public class TestWithSimpleMainClass {
                         + "ERROR: test7\n"
                         + "INFO: test8\n"
                         + "WARNING: test9\n"
-                        + "WARNING: test10";
+                        + "WARNING: test10\n";
         MaiLogger.clearLog();
         assertEquals("", remTime(MaiLogger.getLogAll()));
         MaiLogger.load();
@@ -225,35 +228,35 @@ public class TestWithSimpleMainClass {
     public void testRotate () {
         MaiLogger.logInfo("test1");
         assertEquals(1, new File(dir).listFiles().length);
-        assertEquals("INFO: test1", remTime(readFile(dir + "/" + "mainclass.log")));
+        assertEquals("INFO: test1\n", remTime(readFile(dir + "/" + "mainclass.log")));
         MaiLogger.rotate();
         MaiLogger.logWarning("test2");
         MaiLogger.logInfo("test3");
         assertEquals(2, new File(dir).listFiles().length);
-        assertEquals("WARNING: test2\nINFO: test3", remTime(readFile(dir + "/" + "mainclass.log")));
-        assertEquals("INFO: test1", remTime(readFile(dir + "/" + "mainclass.log.1")));
+        assertEquals("WARNING: test2\nINFO: test3\n", remTime(readFile(dir + "/" + "mainclass.log")));
+        assertEquals("INFO: test1\n", remTime(readFile(dir + "/" + "mainclass.log.1")));
         MaiLogger.rotate();
         MaiLogger.logError("test4");
         MaiLogger.logError("test5");
         MaiLogger.logInfo("test6");
         assertEquals(3, new File(dir).listFiles().length);
-        assertEquals("ERROR: test4\nERROR: test5\nINFO: test6", remTime(readFile(dir + "/" + "mainclass.log")));
-        assertEquals("WARNING: test2\nINFO: test3", remTime(readFile(dir + "/" + "mainclass.log.1")));
-        assertEquals("INFO: test1", remTime(readFile(dir + "/" + "mainclass.log.2")));
+        assertEquals("ERROR: test4\nERROR: test5\nINFO: test6\n", remTime(readFile(dir + "/" + "mainclass.log")));
+        assertEquals("WARNING: test2\nINFO: test3\n", remTime(readFile(dir + "/" + "mainclass.log.1")));
+        assertEquals("INFO: test1\n", remTime(readFile(dir + "/" + "mainclass.log.2")));
         MaiLogger.rotate();
         assertEquals(4, new File(dir).listFiles().length);
         assertEquals("", remTime(readFile(dir + "/" + "mainclass.log")));
-        assertEquals("ERROR: test4\nERROR: test5\nINFO: test6", remTime(readFile(dir + "/" + "mainclass.log.1")));
-        assertEquals("WARNING: test2\nINFO: test3", remTime(readFile(dir + "/" + "mainclass.log.2")));
-        assertEquals("INFO: test1", remTime(readFile(dir + "/" + "mainclass.log.3")));
+        assertEquals("ERROR: test4\nERROR: test5\nINFO: test6\n", remTime(readFile(dir + "/" + "mainclass.log.1")));
+        assertEquals("WARNING: test2\nINFO: test3\n", remTime(readFile(dir + "/" + "mainclass.log.2")));
+        assertEquals("INFO: test1\n", remTime(readFile(dir + "/" + "mainclass.log.3")));
         MaiLogger.rotate();
         MaiLogger.logCritical("test7");
         assertEquals(5, new File(dir).listFiles().length);
-        assertEquals("CRITICAL: test7", remTime(readFile(dir + "/" + "mainclass.log")));
+        assertEquals("CRITICAL: test7\n", remTime(readFile(dir + "/" + "mainclass.log")));
         assertEquals("", remTime(readFile(dir + "/" + "mainclass.log.1")));
-        assertEquals("ERROR: test4\nERROR: test5\nINFO: test6", remTime(readFile(dir + "/" + "mainclass.log.2")));
-        assertEquals("WARNING: test2\nINFO: test3", remTime(readFile(dir + "/" + "mainclass.log.3")));
-        assertEquals("INFO: test1", remTime(readFile(dir + "/" + "mainclass.log.4")));
+        assertEquals("ERROR: test4\nERROR: test5\nINFO: test6\n", remTime(readFile(dir + "/" + "mainclass.log.2")));
+        assertEquals("WARNING: test2\nINFO: test3\n", remTime(readFile(dir + "/" + "mainclass.log.3")));
+        assertEquals("INFO: test1\n", remTime(readFile(dir + "/" + "mainclass.log.4")));
     }
 
 
@@ -264,9 +267,6 @@ public class TestWithSimpleMainClass {
             str.forEach(s -> content.append(s).append("\n"));
         } catch (IOException e) {
             e.printStackTrace();
-        }
-        if (content.length() > 0) {
-            content.deleteCharAt(content.length() - 1);
         }
         return content.toString();
     }
@@ -280,9 +280,6 @@ public class TestWithSimpleMainClass {
             Arrays.stream(exp.split("\n")).forEach(s -> exp2.append(s.substring(18)).append("\n"));
         } catch (IndexOutOfBoundsException e) {
             return "Failed to remove time in expression:\n" + exp;
-        }
-        if (exp2.length() > 0) {
-            exp2.deleteCharAt(exp2.length() - 1);
         }
         return exp2.toString();
     }
