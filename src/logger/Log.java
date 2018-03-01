@@ -31,19 +31,19 @@ public class Log {
         }
         switch (group) {
             case "INFO":
-                this.group = 0;
+                this.group = Group.INFO;
                 break;
             case "WARNING":
-                this.group = 1;
+                this.group = Group.WARNING;
                 break;
             case "ERROR":
-                this.group = 2;
+                this.group = Group.ERROR;
                 break;
             case "CRITICAL":
-                this.group = 3;
+                this.group = Group.CRITICAL;
                 break;
             default:
-                this.group = 4;
+                this.group = Group.OTHER;
                 break;
         }
         this.message = message;
@@ -72,21 +72,6 @@ public class Log {
         return date.getTime();
     }
 
-    public String getGroupAsString () {
-        switch (group) {
-            case 0:
-                return "INFO";
-            case 1:
-                return "WARNING";
-            case 2:
-                return "ERROR";
-            case 3:
-                return "CRITICAL";
-            default:
-                return "OTHER";
-        }
-    }
-
     public String getDateAsString () {
         DateFormat df = new SimpleDateFormat("dd.MM.yy HH:mm:ss");
         return date.getTime() == 0 ? "--.--.-- --:--:--" : df.format(date);
@@ -99,7 +84,7 @@ public class Log {
      */
     public String getLog (boolean time) {
         StringBuilder s = new StringBuilder();
-        s.append(getGroupAsString()).append(": ").append(message);
+        s.append(Group.getGroupAsString(group)).append(": ").append(message);
         return time ? getDateAsString() + " " + s.toString() : s.toString();
     }
 
@@ -109,5 +94,38 @@ public class Log {
      */
     public String toString() {
         return getLog(true);
+    }
+
+    private long getAgeInMilliSeconds () {
+        return new Date().getTime() - getTime();
+    }
+
+    public String getAge () {
+        long age = getAgeInMilliSeconds();
+        StringBuilder s = new StringBuilder();
+        if (age > 86400000) {
+            return "> 1d";
+        }
+        else if (age > 3600000) {
+            int hours = (int) age % 3600000;
+            s.append(hours).append("h ");
+            age = age - hours * 3600000;
+        }
+        if (age > 60000) {
+            int min = (int) age % 60000;
+            s.append(min).append("m ");
+            age = age - min * 60000;
+        }
+        if (age > 1000) {
+            int sec = (int) age % 1000;
+            s.append(sec).append("s");
+            return s.toString();
+        }
+        if (age > 100) {
+            return "0." + (age / 100) + "s";
+        }
+        else {
+            return "" + age + "ms";
+        }
     }
 }

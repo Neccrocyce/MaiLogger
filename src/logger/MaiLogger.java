@@ -5,7 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -18,6 +20,7 @@ import java.util.stream.Stream;
  * @see <a href="https://github.com/Neccrocyce">Neccrocyce - GitHub</a>
  * @see MaiLog
  * @see Log
+ * @version 2.0
  */
 public class MaiLogger {
 	/**
@@ -28,7 +31,7 @@ public class MaiLogger {
 	/**
 	 * list of started tasks
 	 */
-	private static List<Log> tasks = new ArrayList<>();
+	private static Map<Integer,Log> tasks = new HashMap<>();
 
 	/**
 	 * The number of maximum logged events. If {@code maxLogs} is -1 this setting is ignored. If there are more logged events, then the oldest one will be deleted
@@ -115,7 +118,7 @@ public class MaiLogger {
 	}
 
 	private static void logMissingMainClass () {
-		Log missingMC = new Log(1,"MaiLogger has not been set up yet");
+		Log missingMC = new Log(Group.WARNING,"MaiLogger has not been set up yet");
 		log.add(missingMC);
 		try {
 			addLineToFile(missingMC.getLog(time));
@@ -126,11 +129,63 @@ public class MaiLogger {
 	}
 
 	/**
+	 * This method logs an event to the group "INFO" or "ERROR" and returns an id representing the task.
+	 * After the task has finished successfully the method @code{finsishedTask(int)} should be called with the given id.
+	 * This call will add "SUCCESS" to the corresponding log entry and will switch it to the group "INFO". <br>
+	 * If the task has failed the method @code{failedTask(int)} should be called with the given id.
+	 * This call will add "FAILED" to the corresponding log entry and will switch it to the group "ERROR". <br>
+	 * (e.g: int id = logTask("a task"); finishedTask(id) -> log entry: INFO: a task ... SUCCESS)
+	 * @param msg the description of the event that should be logged
+	 * @return the id representing the task
+	 */
+	public static int logTask (String msg) {
+		Log entry = new Log(0,msg);
+		int id;
+		while (true) {
+			id = (int) (Math.random() * Integer.MAX_VALUE);
+			if (tasks.putIfAbsent(id, entry) == null) {
+				break;
+			}
+		}
+		return id;
+	}
+
+	/**
+	 * This method should be called when a task has successfully finished
+     * It adds "SUCCESS" to the corresponding log entry
+	 * @param id ID representing the task
+	 */
+	public static void finsishedTask (int id) {
+		Log entry = tasks.remove(id);
+		if (entry == null) {
+			logError("Task with ID " + id + " was not found");
+			mainClass.sendErrMsg("Task with ID " + id + " was not found");
+			return;
+		}
+		logInfo(entry.getLog(time) + " ... SUCCESS " + "(" + entry.getAge() + ")");
+	}
+
+    /**
+     * This method should be called when a task has failed
+     * It adds "FAILED" to the corresponding log entry
+     * @param id ID representing the task
+     */
+	public static void failedTask (int id) {
+		Log entry = tasks.remove(id);
+		if (entry == null) {
+			logError("Task with ID " + id + " was not found");
+			mainClass.sendErrMsg("Task with ID " + id + " was not found");
+			return;
+		}
+		logError(entry.getLog(time) + " ... FAILED" + "(" + entry.getAge() + ")");
+	}
+
+	/**
 	 * This method logs an event to the group "INFO". This group logs generally useful information.
 	 * @param msg the description of the event that should be logged
 	 */
 	public static void logInfo (String msg) {
-		log(new Log(0,msg));
+		log(new Log(Group.INFO,msg));
 	}
 
 	/**
@@ -138,7 +193,7 @@ public class MaiLogger {
 	 * @param msg the description of the event that should be logged
 	 */
 	public static void logWarning (String msg) {
-		log(new Log(1, msg));
+		log(new Log(Group.WARNING, msg));
 	}
 
 	/**
@@ -146,7 +201,7 @@ public class MaiLogger {
 	 * @param msg the description of the event that should be logged
 	 */
 	public static void logError (String msg) {
-		log(new Log(2,msg));
+		log(new Log(Group.ERROR,msg));
 	}
 	
 	/**
@@ -155,11 +210,12 @@ public class MaiLogger {
 	 * @param msg the description of the event that should be logged
 	 */
 	public static void logCritical (String msg) {
-		log(new Log(3,msg));
+		log(new Log(Group.CRITICAL,msg));
+		on_critical();
 		try {
 			mainClass.stop();
 		} catch (NullPointerException e) {
-			log(new Log(3, "Cannot stop application; MaiLogger has not been set up yet"));
+			log(new Log(Group.CRITICAL, "Cannot stop application; MaiLogger has not been set up yet"));
 		}
 	}
 	
@@ -268,10 +324,10 @@ public class MaiLogger {
 			w = new BufferedWriter(new FileWriter(logFile));
 			String[] content = getLogAll().split("\n");
 			if (!content[0].equals("")) {
-				for (int i = 0; i < content.length; i++) {
-					w.write(content[i]);
-					w.newLine();
-				}
+                for (String aContent : content) {
+                    w.write(aContent);
+                    w.newLine();
+                }
 			}
 			new File(logFile + ".backup").delete();
 		} catch (IOException e) {
@@ -295,10 +351,10 @@ public class MaiLogger {
 			throw new NoSuchFileException(logfile + "does not exist");
 		}
 
-		FileWriter wout = null;
+		FileWriter wout;
 		try {
 			wout = new FileWriter(new File(logfile),true);
-			wout.append(line + "\n");
+			wout.append(line).append("\n");
 			wout.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -400,5 +456,28 @@ public class MaiLogger {
 	 */
 	public static void clearLog () {
 		log = new ArrayList<>();
+	}
+
+	/**
+	 * This method should be called after the last call to log an entry and before the application will be stopped
+	 * It logs every running task with the suffix "ABORTED BY USER"
+	 * If no tasks have been started, this method hasn't to be called
+	 */
+	public static void on_exit () {
+		for (Map.Entry<Integer,Log> task : tasks.entrySet()) {
+			Log entry = task.getValue();
+			logError(entry.getLog(time) + " ... ABORTED BY USER");
+		}
+	}
+
+	/**
+	 * This method is called after a critical event has been logged.
+	 * It logs every running task with the suffix "ABORTED BY CRITICAL STATE"
+	 */
+	private static void on_critical () {
+		for (Map.Entry<Integer,Log> task : tasks.entrySet()) {
+			Log entry = task.getValue();
+			logError(entry.getLog(time) + " ... ABORTED BY CRITICAL STATE");
+		}
 	}
 }
