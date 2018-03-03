@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * The {@code Mylogger} class provides the recording of events that occur in a running application
+ * The {@code Mailogger} class provides the recording of events that occur in a running application
  * It saves these records into log files and sends them to the mainclass
  * If a critical event is logged, the {@code MaiLog.stop()} method is called to handle this critical state of the application.
  * This class also provides log-rotation and to set the maximum number of logged information
@@ -31,7 +31,7 @@ public class MaiLogger {
 	/**
 	 * list of started tasks
 	 */
-	private static Map<Integer,Log> tasks = new HashMap<>();
+	private static Map<Integer,Task> tasks = new HashMap<>();
 
 	/**
 	 * The number of maximum logged events. If {@code maxLogs} is -1 this setting is ignored. If there are more logged events, then the oldest one will be deleted
@@ -130,16 +130,16 @@ public class MaiLogger {
 
 	/**
 	 * This method logs an event to the group "INFO" or "ERROR" and returns an id representing the task.
-	 * After the task has finished successfully the method @code{finsishedTask(int)} should be called with the given id.
+	 * After the task has finished successfully the method @code{suceededTask(int)} should be called with the given id.
 	 * This call will add "SUCCESS" to the corresponding log entry and will switch it to the group "INFO". <br>
 	 * If the task has failed the method @code{failedTask(int)} should be called with the given id.
 	 * This call will add "FAILED" to the corresponding log entry and will switch it to the group "ERROR". <br>
-	 * (e.g: int id = logTask("a task"); finishedTask(id) -> log entry: INFO: a task ... SUCCESS)
+	 * (e.g: int id = logTask("a task"); suceededTask(id) -> log entry: INFO: a task ... SUCCESS)
 	 * @param msg the description of the event that should be logged
 	 * @return the id representing the task
 	 */
 	public static int logTask (String msg) {
-		Log entry = new Log(0,msg);
+		Task entry = new Task(msg);
 		int id;
 		while (true) {
 			id = (int) (Math.random() * Integer.MAX_VALUE);
@@ -155,14 +155,15 @@ public class MaiLogger {
      * It adds "SUCCESS" to the corresponding log entry
 	 * @param id ID representing the task
 	 */
-	public static void finsishedTask (int id) {
-		Log entry = tasks.remove(id);
+	public static void suceededTask (int id) {
+		Task entry = tasks.remove(id);
 		if (entry == null) {
 			logError("Task with ID " + id + " was not found");
 			mainClass.sendErrMsg("Task with ID " + id + " was not found");
 			return;
 		}
-		logInfo(entry.getLog(time) + " ... SUCCESS " + "(" + entry.getAge() + ")");
+		entry.setSuceeded();
+		log(entry);
 	}
 
     /**
@@ -171,13 +172,14 @@ public class MaiLogger {
      * @param id ID representing the task
      */
 	public static void failedTask (int id) {
-		Log entry = tasks.remove(id);
+		Task entry = tasks.remove(id);
 		if (entry == null) {
 			logError("Task with ID " + id + " was not found");
 			mainClass.sendErrMsg("Task with ID " + id + " was not found");
 			return;
 		}
-		logError(entry.getLog(time) + " ... FAILED" + "(" + entry.getAge() + ")");
+		entry.setFailed();
+		log(entry);
 	}
 
 	/**
@@ -456,6 +458,7 @@ public class MaiLogger {
 	 */
 	public static void clearLog () {
 		log = new ArrayList<>();
+		tasks = new HashMap<>();
 	}
 
 	/**
@@ -464,10 +467,12 @@ public class MaiLogger {
 	 * If no tasks have been started, this method hasn't to be called
 	 */
 	public static void on_exit () {
-		for (Map.Entry<Integer,Log> task : tasks.entrySet()) {
-			Log entry = task.getValue();
-			logError(entry.getLog(time) + " ... ABORTED BY USER");
+		for (Map.Entry<Integer, Task> task : tasks.entrySet()) {
+			Task entry = task.getValue();
+			entry.setAbort("USER");
+			log(entry);
 		}
+		tasks = new HashMap<>();
 	}
 
 	/**
@@ -475,9 +480,11 @@ public class MaiLogger {
 	 * It logs every running task with the suffix "ABORTED BY CRITICAL STATE"
 	 */
 	private static void on_critical () {
-		for (Map.Entry<Integer,Log> task : tasks.entrySet()) {
-			Log entry = task.getValue();
-			logError(entry.getLog(time) + " ... ABORTED BY CRITICAL STATE");
+		for (Map.Entry<Integer,Task> task : tasks.entrySet()) {
+			Task entry = task.getValue();
+			entry.setAbort("CRITICAL STATE");
+			log(entry);
 		}
+		tasks = new HashMap<>();
 	}
 }

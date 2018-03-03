@@ -16,12 +16,12 @@ public class Log {
      * The group the log is assigned to:
      * 0: Info, 1: Warning, 2: Error, 3: Critical
      */
-    private int group;
+    private final int group;
 
     /**
      * the description of the event that is logged
      */
-    private String message;
+    private final String message;
 
     public Log (String date, String group, String message){
         try {
@@ -64,7 +64,7 @@ public class Log {
         return group;
     }
 
-    public String getMessage() {
+    protected String getMessage() {
         return message;
     }
 
@@ -94,38 +94,5 @@ public class Log {
      */
     public String toString() {
         return getLog(true);
-    }
-
-    private long getAgeInMilliSeconds () {
-        return new Date().getTime() - getTime();
-    }
-
-    public String getAge () {
-        long age = getAgeInMilliSeconds();
-        StringBuilder s = new StringBuilder();
-        if (age > 86400000) {
-            return "> 1d";
-        }
-        else if (age > 3600000) {
-            int hours = (int) age % 3600000;
-            s.append(hours).append("h ");
-            age = age - hours * 3600000;
-        }
-        if (age > 60000) {
-            int min = (int) age % 60000;
-            s.append(min).append("m ");
-            age = age - min * 60000;
-        }
-        if (age > 1000) {
-            int sec = (int) age % 1000;
-            s.append(sec).append("s");
-            return s.toString();
-        }
-        if (age > 100) {
-            return "0." + (age / 100) + "s";
-        }
-        else {
-            return "" + age + "ms";
-        }
     }
 }

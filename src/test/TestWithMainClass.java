@@ -4,9 +4,7 @@ import logger.MaiLogger;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.text.DateFormat;
@@ -295,6 +293,112 @@ public class TestWithMainClass {
         assertEquals(exp, readFile(dir + "/mainclass.log"));
     }
 
+    @Test
+    public void test10TaskSuccess () {
+        int id = MaiLogger.logTask("test1");
+        String exp = "INFO: test1 ... SUCCESS \n";
+
+        assertEquals("", MaiLogger.getLogAll());
+        assertEquals("", readFile(dir + "/mainclass.log"));
+        assertEquals("", mc.getLog());
+        assertEquals("", mc.getErrLog());
+        assertEquals(1, new File(dir).listFiles().length);
+
+        MaiLogger.suceededTask(id);
+
+        assertEquals(exp, remDelay(MaiLogger.getLogAll()));
+        assertEquals(exp, remDelay(readFile(dir + "/mainclass.log")));
+        assertEquals(exp, remDelay(mc.getLog()));
+        assertEquals("", mc.getErrLog());
+        assertEquals(1, new File(dir).listFiles().length);
+    }
+
+    @Test
+    public void test11TaskFailed () {
+        int id = MaiLogger.logTask("test1");
+        String exp = "ERROR: test1 ... FAILED \n";
+
+        assertEquals("", MaiLogger.getLogAll());
+        assertEquals("", readFile(dir + "/mainclass.log"));
+        assertEquals("", mc.getLog());
+        assertEquals("", mc.getErrLog());
+        assertEquals(1, new File(dir).listFiles().length);
+
+        MaiLogger.failedTask(id);
+
+        assertEquals(exp, remDelay(MaiLogger.getLogAll()));
+        assertEquals(exp, remDelay(readFile(dir + "/mainclass.log")));
+        assertEquals(exp, remDelay(mc.getLog()));
+        assertEquals("", mc.getErrLog());
+        assertEquals(1, new File(dir).listFiles().length);
+    }
+
+    @Test
+    public void test12TaskAbort () {
+        int id = MaiLogger.logTask("test1");
+        String exp = "ERROR: test1 ... ABORTED BY USER\n";
+
+        assertEquals("", MaiLogger.getLogAll());
+        assertEquals("", readFile(dir + "/mainclass.log"));
+        assertEquals("", mc.getLog());
+        assertEquals("", mc.getErrLog());
+        assertEquals(1, new File(dir).listFiles().length);
+
+        MaiLogger.on_exit();
+
+        assertEquals(exp, MaiLogger.getLogAll());
+        assertEquals(exp, readFile(dir + "/mainclass.log"));
+        assertEquals(exp, mc.getLog());
+        assertEquals("", mc.getErrLog());
+        assertEquals(1, new File(dir).listFiles().length);
+    }
+
+    @Test
+    public void test13MultipleTasks () {
+        MaiLogger.setUp(mc, -1, 3, false, dir);
+        String[] exp = new String[] {
+                "INFO: test1 ... SUCCESS \n",
+                "ERROR: test2 ... ABORTED BY USER\n",
+                "ERROR: test3 ... FAILED \n",
+                "INFO: test4\n",
+                "INFO: test5 ... SUCCESS \n",
+                "ERROR: test6 ... ABORTED BY USER\n",
+                "ERROR: test7 ... ABORTED BY CRITICAL STATE\n",
+                "ERROR: test8 ... ABORTED BY USER\n",
+                "CRITICAL: test9\n",
+        };
+
+        int id1 = MaiLogger.logTask("test1");
+        int id2 = MaiLogger.logTask("test2");
+        assertEquals("", MaiLogger.getLogAll());
+        assertEquals("", readFile(dir + "/mainclass.log"));
+
+        MaiLogger.suceededTask(id1);
+        assertEquals(exp[0], remDelay(MaiLogger.getLogAll()));
+        assertEquals(exp[0], remDelay(readFile(dir + "/mainclass.log")));
+
+        int id3 = MaiLogger.logTask("test3");
+        int id5 = MaiLogger.logTask("test5");
+
+        MaiLogger.suceededTask(id5);
+        MaiLogger.logInfo("test4");
+        MaiLogger.failedTask(id3);
+        String expl = exp[0] + exp[4] + exp[3] + exp[2];
+        assertEquals(expl, remDelay(MaiLogger.getLogAll()));
+        assertEquals(expl, remDelay(readFile(dir + "/mainclass.log")));
+
+        expl += exp[1];
+        MaiLogger.on_exit();
+        assertEquals(expl, remDelay(MaiLogger.getLogAll()));
+        assertEquals(expl, remDelay(readFile(dir + "/mainclass.log")));
+
+        int id7 = MaiLogger.logTask("test7");
+        MaiLogger.logCritical("test9");
+        expl += exp[8] + exp[6];
+        assertEquals(expl, remDelay(MaiLogger.getLogAll()));
+        assertEquals(expl, remDelay(readFile(dir + "/mainclass.log")));
+    }
+
 
 
     private static String readFile (String path) {
@@ -305,6 +409,26 @@ public class TestWithMainClass {
             e.printStackTrace();
         }
         return content.toString();
+    }
+
+    private static String remDelay (String entry) {
+        StringBuilder content = new StringBuilder();
+        try {
+            String[] lines = entry.split("\n");
+            for (String line : lines) {
+                int op = line.indexOf("(");
+                int en = line.indexOf(")");
+                if (op == -1 || en == -1) {
+                    content.append(line).append("\n");
+                } else {
+                    content.append(line.substring(0, op)).append(en + 1 == line.length() ? "" : line.substring(en + 1)).append("\n");
+                }
+            }
+            return content.toString();
+        } catch (IndexOutOfBoundsException e) {
+            return "Failed to remove delay in: " + entry;
+        }
+
     }
 
 
