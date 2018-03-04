@@ -304,7 +304,7 @@ public class TestWithMainClass {
         assertEquals("", mc.getErrLog());
         assertEquals(1, new File(dir).listFiles().length);
 
-        MaiLogger.suceededTask(id);
+        MaiLogger.succeededTask(id);
 
         assertEquals(exp, remDelay(MaiLogger.getLogAll()));
         assertEquals(exp, remDelay(readFile(dir + "/mainclass.log")));
@@ -373,14 +373,14 @@ public class TestWithMainClass {
         assertEquals("", MaiLogger.getLogAll());
         assertEquals("", readFile(dir + "/mainclass.log"));
 
-        MaiLogger.suceededTask(id1);
+        MaiLogger.succeededTask(id1);
         assertEquals(exp[0], remDelay(MaiLogger.getLogAll()));
         assertEquals(exp[0], remDelay(readFile(dir + "/mainclass.log")));
 
         int id3 = MaiLogger.logTask("test3");
         int id5 = MaiLogger.logTask("test5");
 
-        MaiLogger.suceededTask(id5);
+        MaiLogger.succeededTask(id5);
         MaiLogger.logInfo("test4");
         MaiLogger.failedTask(id3);
         String expl = exp[0] + exp[4] + exp[3] + exp[2];

@@ -24,7 +24,7 @@ public interface MaiLog {
 	public void sendErrMsg(String msg);
 
 	/**
-	 * This method will be called any time an event is logged.
+	 * This method will be called every time an event is logged.
 	 * @param msg the description of the event that should be logged
 	 */
 	public void sendLog(String msg);

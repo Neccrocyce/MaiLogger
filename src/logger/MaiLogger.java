@@ -75,15 +75,15 @@ public class MaiLogger {
 	 * <pre>
 	 * @param mainClass The class which implements {@code MaiLog} interface
 	 * @param maxLogs The number of maximum logged events
+	 *                It is recommend to set it to -1. Otherwise MaiLogger is less efficient, because of creating a new log file every time an event is logged, instead of adding the event to the end of the existing log file.
 	 *        -1: infinite (recommend)
 	 *        default: -1
 	 * @param rotations The maximum number of files that are created by log rotation.
-	 *                  It is recommend to set it to -1. Otherwise MaiLogger is less efficient, because of creating a new log file every time an event is logged, instead of adding the event to the end of the existing log file.
 	 *        -1: infinite
 	 *        default -1
 	 * @param time Decides whether the time of logging the event is logged, too
 	 * @param directory The directory in which the log files are saved
-	 *        default ~/logs
+	 *        default ~/../logs
 	 * </pre>
 	 * @throws NullPointerException if {@code mainclass} is null
 	 */
@@ -92,7 +92,7 @@ public class MaiLogger {
 		MaiLogger.maxLogs = maxLogs;
 		MaiLogger.rotations = rotations;
 		MaiLogger.time = time;
-		if (!directory.equals("")) {
+		if (directory != null && !directory.equals("")) {
 			MaiLogger.directory = directory;
 		}
 		fileName = mainClass.getClass().getSimpleName().toLowerCase();
@@ -123,18 +123,18 @@ public class MaiLogger {
 		try {
 			addLineToFile(missingMC.getLog(time));
 		} catch (NoSuchFileException e) {
-			//save();
+
 		}
 		reduceLog();
 	}
 
 	/**
 	 * This method logs an event to the group "INFO" or "ERROR" and returns an id representing the task.
-	 * After the task has finished successfully the method @code{suceededTask(int)} should be called with the given id.
+	 * After the task has finished successfully the method @code{succeededTask(int)} should be called with the given id.
 	 * This call will add "SUCCESS" to the corresponding log entry and will switch it to the group "INFO". <br>
 	 * If the task has failed the method @code{failedTask(int)} should be called with the given id.
 	 * This call will add "FAILED" to the corresponding log entry and will switch it to the group "ERROR". <br>
-	 * (e.g: int id = logTask("a task"); suceededTask(id) -> log entry: INFO: a task ... SUCCESS)
+	 * (e.g: int id = logTask("a task"); succeededTask(id) -> log entry: INFO: a task ... SUCCESS)
 	 * @param msg the description of the event that should be logged
 	 * @return the id representing the task
 	 */
@@ -155,7 +155,7 @@ public class MaiLogger {
      * It adds "SUCCESS" to the corresponding log entry
 	 * @param id ID representing the task
 	 */
-	public static void suceededTask (int id) {
+	public static void succeededTask (int id) {
 		Task entry = tasks.remove(id);
 		if (entry == null) {
 			logError("Task with ID " + id + " was not found");
@@ -347,6 +347,11 @@ public class MaiLogger {
 		}
 	}
 
+	/**
+	 * This method adds a line to the end of a file.
+	 * @param line the line to add
+	 * @throws NoSuchFileException if the log file does not exist
+	 */
 	private static void addLineToFile (String line) throws NoSuchFileException {
 		String logfile = directory + "/" + fileName + ".log";
 		if (!new File(logfile).exists()) {
@@ -467,12 +472,7 @@ public class MaiLogger {
 	 * If no tasks have been started, this method hasn't to be called
 	 */
 	public static void on_exit () {
-		for (Map.Entry<Integer, Task> task : tasks.entrySet()) {
-			Task entry = task.getValue();
-			entry.setAbort("USER");
-			log(entry);
-		}
-		tasks = new HashMap<>();
+			abortTasks("USER");
 	}
 
 	/**
@@ -480,9 +480,17 @@ public class MaiLogger {
 	 * It logs every running task with the suffix "ABORTED BY CRITICAL STATE"
 	 */
 	private static void on_critical () {
+			abortTasks("CRITICAL STATE");
+	}
+
+	/**
+	 * This method logs every running task with the suffix {@code msg}
+	 * @param msg reason for the abortion
+	 */
+	private static void abortTasks (String msg) {
 		for (Map.Entry<Integer,Task> task : tasks.entrySet()) {
 			Task entry = task.getValue();
-			entry.setAbort("CRITICAL STATE");
+			entry.setAbort(msg);
 			log(entry);
 		}
 		tasks = new HashMap<>();
