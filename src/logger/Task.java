@@ -12,7 +12,7 @@ public class Task extends Log {
         group = Group.OTHER;
     }
 
-    public void setSuceeded () {
+    public void Succeeded () {
         if (finished) return;
         messageSuffix = " ... SUCCESS " + "(" + getAge() + ")";
         group = Group.INFO;

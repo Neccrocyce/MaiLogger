@@ -30,6 +30,27 @@
 %tab
 \newcommand{\tab}[1][1]{\hspace*{#1cm}}
 
+%reference methods
+\newcommand{\logInfo}{\refh{logging_info}{\lstinline|MaiLogger.logInfo (String)|}}
+\newcommand{\logWarning}{\refh{logging_warning}{\lstinline|MaiLogger.logWarning (String)|}}
+\newcommand{\logError}{\refh{logging_error}{\lstinline|MaiLogger.logError (String)|}}
+\newcommand{\logCritical}{\refh{logging_critical}{\lstinline|MaiLogger.logCritical(String)|}}
+
+\newcommand{\logTask}{\refh{tasks_logTask}{\lstinline|MaiLogger.logTask (String)|}}
+\newcommand{\succeededTask}{\refh{tasks_succeededTask}{\lstinline|MaiLogger.succeededTask (int)|}}
+\newcommand{\failedTask}{\refh{tasks_failedTask}{\lstinline|MaiLogger.failedTask (int)|}}
+
+\newcommand{\onExit}{\refh{on_exit}{\lstinline|MaiLogger.on_exit ()|}}
+
+\newcommand{\load}{\refh{other_load}{\lstinline|MaiLogger.load ()|}}
+\newcommand{\rotate}{\refh{rotate}{\lstinline|MaiLogger.rotate ()|}}
+
+\newcommand{\sendLog}{\refh{setup_interface}{\lstinline|MaiLog.sendLog(String)|}}
+\newcommand{\sendErr}{\refh{setup_interface}{\lstinline|MaiLog.sendErrMsg(String)|}}
+\newcommand{\MaiLogStop}{\refh{setup_interface}{\lstinline|MaiLog.stop()|}}
+
+
+
 \begin{document}
 \maketitle
 \tableofcontents
@@ -40,22 +61,23 @@
     MaiLogger is a tool for logging events representing the state of a program.
     MaiLogger supports following features
     \begin{itemize}
-        \item Logging 4 groups of events (info, warning, error, critical)
+        \item Logging 4 groups of events (info, warning, error, critical) (see: \refh{logging}{Logging})
         \item writing logged events to a file
         \item Setting the folder of that file (see: \hyperref[setup_mailogger.setup]{\coB{Configure Mailogger}})
-        \item Loading log files
+        \item Loading log files (see: \refh{other_load}{Load a log file})
         \item Setting the maximum number of events to log (deletes old ones in case of two many events; uses FIFO manner to remove log entries) (see: \refh{setup_mailogger.setup}{Configure Mailogger})
-        \item Log rotation
-        \item Setting the maximum number of files saved by the log rotation
-        \item Setting whether the time representing the occurrence of an event is also logged
-        \item Stopping the application if a critical error occurred
-        \item Logging of tasks with the appendix of "success", "failed" or "abort"
+        \item Log rotation (see: \refh{rotate}{Log Rotation})
+        \item Setting the maximum number of files saved by the log rotation (see: \refh{setup_mailogger.setup}{Configure Mailogger})
+        \item Setting whether the time representing the occurrence of an event is also logged (see: \refh{setup_mailogger.setup}{Configure Mailogger})
+        \item Stopping the application if a critical error occurred (see: \refh{logging_critical}{Log critical})
+        \item Logging of tasks with the appendix of "success", "failed" or "abort" (see: \refh{tasks}{Tasks})
     \end{itemize}
     All classes of MaiLogger are located in the package logger.
     In the following we will ignore the reference to this package and will only use the names of those classes. (e.g: logger.MaiLogger -$>$ MaiLogger)
 
     \subsection{Log file}
-    Every logged event will be written to a log file. This file is located in the directory which has been determined (see: \refh{setup_mailogger.setup}{Configure MaiLogger}).
+    Every logged event will be written to a log file.
+    This file is located in the directory which has been determined (see: \refh{setup_mailogger.setup}{Configure MaiLogger}).
     The name of that file is the name of the class which implements the interface MaiLog (written in lowercase).
     This file is also used to load log files by calling the method \lstinline|MaiLogger.load()|.
 
@@ -74,19 +96,19 @@
 
     \textbf{stop():} \\
     This method will be called as soon as a critical error occurred.
-    This means, that as soon as the method \lstinline|MaiLogger.logCritical(String)| is called, that event responsible for the critical state of the application will be logged and the method \lstinline|MaiLog.stop()| will be called afterwards.
+    This means, that as soon as the method \logCritical is called, that event responsible for the critical state of the application will be logged and the method \lstinline|MaiLog.stop()| will be called afterwards.
     The purpose of this method is to stop the application when it reaches a critical state. \\
 
     \textbf{sendLog(String):} \\
     This method will be called every time an event is logged, means that one of the following methods is called:
     \begin{itemize}
-        \item \lstinline|logInfo(String)|
-        \item \lstinline|logWarning(String)|
-        \item \lstinline|logError(String)|
-        \item \lstinline|logCritical(String)|
-        \item \lstinline|succeededTask(int)|
-        \item \lstinline|failedTask(int)|
-        \item \lstinline|on_exit()|
+        \item \logInfo
+        \item \logWarning
+        \item \logError
+        \item \logCritical
+        \item \succeededTask
+        \item \failedTask
+        \item \onExit
     \end{itemize}
     The argument of this method is the description of the event.
     The developer is free to choose what to do with this information.
@@ -146,10 +168,10 @@
     \textbf{int rotations:}
     Sets the maximum number of files created by log rotation.
     Set this value to -1 to not limit the maximum number of files.
-    The default value is -1. \\
+    The default value is -1. (see: \refh{rotate}{Log rotation}) \\
 
     \textbf{boolean time:}
-    Decides wether the time when the event has been logged is also logged.
+    Decides whether the time when the event has been logged is also logged.
     Set it to true to log the time.
     If ''time`` is true, every log entry will have the following format:
     \begin{description}
@@ -181,18 +203,18 @@
     If tasks are not used by the program, there is no need to call \lstinline|MaiLogger.on_exit()|.
 
 \section{Logging}
-MaiLogger supports four methods to log an event:
-\begin{itemize}
-    \item \lstinline|MaiLogger.logInfo(String)|
-    \item \lstinline|MaiLogger.logWarning(String)|
-    \item \lstinline|MaiLogger.logError(String)|
-    \item \lstinline|MaiLogger.logCritical(String)|
-\end{itemize}
-Every method assigns the event to another group.
-
 \label{logging}
+    MaiLogger supports four methods to log an event:
+    \begin{itemize}
+        \item \logInfo
+        \item \logWarning
+        \item \logError
+        \item \logCritical
+    \end{itemize}
+    Every method assigns the event to another group.
+
     \subsection{Groups}
-    \label{groups}
+    \label{logging_groups}
     There are 4 groups an event can be assigned to: info, warning, error, critical.
     Every group represents another priority of the logged events: \\
 
@@ -213,7 +235,7 @@ Every method assigns the event to another group.
 
     \subsection{Log info}
 \label{logging_info}
-    The method \lstinline|MaiLogger (String msg)| logs an event to the group info.
+    The method \lstinline|MaiLogger.logInfo (String msg)| logs an event to the group info.
     The first argument of the method is the description of the event.
     The log entry has the following format:
     \begin{description}
@@ -221,11 +243,11 @@ Every method assigns the event to another group.
         \item or
         \item dd.MM.yy HH:mm:ss INFO: $<$msg$>$
     \end{description}
-    This entry will be written to the end of the log file and in addition the method \lstinline|MaiLog.sendLog(String)| is called with this entry handed-over as argument.
+    This entry will be written to the end of the log file and in addition the method \sendLog is called with this entry handed-over as argument.
 
     \subsection{Log warning}
     \label{logging_warning}
-    The method \lstinline|MaiLogger (String msg)| logs an event to the group warning.
+    The method \lstinline|MaiLogger.logWarning (String msg)| logs an event to the group warning.
     The first argument of the method is the description of the event.
     The log entry has the following format:
     \begin{description}
@@ -233,11 +255,11 @@ Every method assigns the event to another group.
         \item or
         \item dd.MM.yy HH:mm:ss WARNING: $<$msg$>$
     \end{description}
-    This entry will be written to the end of the log file and in addition the method \lstinline|MaiLog.sendLog(String)| is called with this entry handed-over as argument.
+    This entry will be written to the end of the log file and in addition the method \sendLog is called with this entry handed-over as argument.
 
     \subsection{Log error}
     \label{logging_error}
-    The method \lstinline|MaiLogger (String msg)| logs an event to the group error.
+    The method \lstinline|MaiLogger.logError (String msg)| logs an event to the group error.
     The first argument of the method is the description of the event.
     The log entry has the following format:
     \begin{description}
@@ -245,11 +267,11 @@ Every method assigns the event to another group.
         \item or
         \item dd.MM.yy HH:mm:ss ERROR: $<$msg$>$
     \end{description}
-    This entry will be written to the end of the log file and in addition the method \lstinline|MaiLog.sendLog(String)| is called with this entry handed-over as argument.
+    This entry will be written to the end of the log file and in addition the method \sendLog is called with this entry handed-over as argument.
 
     \subsection{Log critical}
     \label{logging_critical}
-    The method \lstinline|MaiLogger (String msg)| logs an event to the group critical.
+    The method \lstinline|MaiLogger.logCritical (String msg)| logs an event to the group critical.
     The first argument of the method is the description of the event.
     The log entry has the following format:
     \begin{description}
@@ -257,8 +279,8 @@ Every method assigns the event to another group.
         \item or
         \item dd.MM.yy HH:mm:ss CRITICAL: $<$msg$>$
     \end{description}
-    This entry will be written to the end of the log file and in addition the method \lstinline|MaiLog.sendLog(String)| is called with this entry handed-over as argument.
-    Afterwards all running \refh{tasks}{tasks} will be logged with the adding ''ABORTED BY CRITICAL STATE`` and the terminating of the application will be initiated by calling \lstinline|MaiLog.stop()|.
+    This entry will be written to the end of the log file and in addition the method \sendLog is called with this entry handed-over as argument.
+    Afterwards all running \refh{tasks}{tasks} will be logged with the adding ''ABORTED BY CRITICAL STATE`` and the termination of the application will be triggered by calling \MaiLogStop.
 
 \section{Tasks}
 \label{tasks}
@@ -266,25 +288,25 @@ Every method assigns the event to another group.
     The purpose of tasks in MaiLogger is to log only one entry with the adding success, failed or aborted and the time the task needed to finish, instead of two entries for starting and stopping the task.
     For this MaiLogger supports special methods to log tasks:
     \begin{itemize}
-        \item \lstinline|logTask(String)|
-        \item \lstinline|succeededTask(int)|
-        \item \lstinline|failedTask(int)|
+        \item \logTask
+        \item \succeededTask
+        \item \failedTask
     \end{itemize}
 
-    \subsection{log Task}
-    \label{task_logTask}
+    \subsection{Log Task}
+    \label{tasks_logTask}
     The method \lstinline|logTask(String msg)| creates a new event representing a task where the first argument represents the description of that task.
     The return value of this method is the id representing this event.
     This event is set as running task and is not logged until it has finished or has been aborted.
-    To tell a task as finished, call \lstinline|succededTask(int id)| or \lstinline|failedTask(int id)|.
+    To tell a task as finished, call \lstinline|succeededTask(int id)| or \lstinline|failedTask(int id)|.
     Whenever a critical event was logged, all tasks will be logged with the adding ''ABORTED BY CRITICAL STATE``.
-    When the method \lstinline|MaiLogger.on_exit()|is called, every task will be logged with the adding ''ABORTED BY USER``.
+    When the method \lstinline|MaiLogger.on_exit()| is called, every task will be logged with the adding ''ABORTED BY USER``.
     As soon as a task has finished or has been aborted, it is no longer possible to change its status.
 
-    \subsection{succeeded task}
-    \label{task_succeededTask}
+    \subsection{Succeeded task}
+    \label{tasks_succeededTask}
     The method \lstinline|succeededTask(int id)| sets the task with the id, handed-over as argument, as successfully finished.
-    Furthermore it logs the task as event of the group info and adds the time needed to complete the task and the notice that the task finished successfully.
+    Furthermore it logs the task as event of the \refh{logging_groups}{group} info and adds the time needed to complete the task and the notice that the task finished successfully.
     The entry has the following format:
     \begin{description}
         \item INFO: $<$msg$>$ ... SUCCESS ($<$runtime$>$)
@@ -293,12 +315,12 @@ Every method assigns the event to another group.
     \end{description}
     (Here, the time is specified, in which the task was created) \\
     If the task with the id doesn't exist, a new log entry will be created with the information that the task wasn't found and logged as event of the group ''error``.
-    Furthermore \lstinline|MaiLog.sendErrMsg(String)| will be called with this information.
+    Furthermore \sendErr will be called with this information.
 
-    \subsection{failed task}
-    \label{task_failedTask}
+    \subsection{Failed task}
+    \label{tasks_failedTask}
     The method \lstinline|failedTask(int id)| sets the task with the id, handed-over as argument, as failed.
-    Furthermore it logs the task as event of the group error and adds the time needed to complete the task and the notice that the task failed.
+    Furthermore it logs the task as event of the \refh{logging_groups}{group} error and adds the time needed to complete the task and the notice that the task failed.
     The entry has the following format:
     \begin{description}
         \item ERROR: $<$msg$>$ ... FAILED ($<$runtime$>$)
@@ -307,9 +329,10 @@ Every method assigns the event to another group.
     \end{description}
     (Here, the time is specified, in which the task was created) \\
     If the task with the id doesn't exist, a new log entry will be created with the information that the task wasn't found and logged as event of the group ''error``.
-    Furthermore \lstinline|MaiLog.sendErrMsg(String)| will be called with this information.
+    Furthermore \sendErr will be called with this information.
 
 \section{Log Rotation}
+\label{rotate}
     To rotate the log files, MaiLogger provides the method \lstinline|MaiLogger.rotate()|
     Rotation means that the current log file (here,all log files are called $<$mainclass$>$)
     \begin{description}
@@ -322,13 +345,16 @@ Every method assigns the event to another group.
     If a maximum number of log files has been set (see: \refh{setup_mailogger.setup}{Configure MaiLogger}) and exceeded by a log rotation, the oldest file will deleted.
 
 \section{Further features}
+\label{other}
     \subsection{Load a log file}
+    \label{other_load}
     MaiLogger provides a method \lstinline|MaiLogger.load()| to load a log file.
     This method loads all log entries of the log file stored in the directory specified by the Configuration of MaiLogger (see: \refh{setup_mailogger.setup}{Configure MaiLogger}).
     This will override all current existing log entries.
     If Mailogger hasn't been set up yet, MaiLogger.load() will throw an IllegalStateException.
 
     \subsection{Get the log entries}
+    \label{other_getlog}
     MaiLogger provides two methods which return the current log entries:
     \begin{itemize}
         \item \lstinline|MaiLogger.getLog(boolean info, boolean warning, boolean error, boolean critical)|
@@ -336,7 +362,7 @@ Every method assigns the event to another group.
     \end{itemize}
 
     \textbf{MaiLogger.getLog(boolean info, boolean warning, boolean error, boolean critical):} \\
-    This method expects 4 arguments, each one represents the group of which the log entries should be returned. \\
+    This method expects 4 arguments, each one represents the \refh{logging_groups}{group} of which the log entries should be returned. \\
     E.g: \\
     \begin{description}
         \item To get all log entries of the group ''info`` then set info to true: \\ \lstinline| MaiLogger.getLog(true, false, false, false)|
@@ -351,8 +377,9 @@ Every method assigns the event to another group.
     This method returns all log entries in chronologically order.
     It is equals to \lstinline|MaiLogger.getLog(true, true, true, true)|
 
-    \subsection{clear log}
-    MaiLogger provides a method to remove all current log entries and tasks.
+    \subsection{Clear log}
+    \label{other_clear}
+    MaiLogger provides a method to remove all current log entries and \refh{tasks}{tasks}.
     This does not affect the log file.
 
 

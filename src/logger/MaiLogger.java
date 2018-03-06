@@ -162,7 +162,7 @@ public class MaiLogger {
 			mainClass.sendErrMsg("Task with ID " + id + " was not found");
 			return;
 		}
-		entry.setSuceeded();
+		entry.Succeeded();
 		log(entry);
 	}
 
