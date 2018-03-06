@@ -27,8 +27,13 @@
 %tabularx
 \usepackage{tabularx}
 
+%tab
+\newcommand{\tab}[1][1]{\hspace*{#1cm}}
+
 \begin{document}
 \maketitle
+\tableofcontents
+\pagebreak
 
 \section{Intro}
 \label{intro}
@@ -274,6 +279,7 @@ Every method assigns the event to another group.
     To tell a task as finished, call \lstinline|succededTask(int id)| or \lstinline|failedTask(int id)|.
     Whenever a critical event was logged, all tasks will be logged with the adding ''ABORTED BY CRITICAL STATE``.
     When the method \lstinline|MaiLogger.on_exit()|is called, every task will be logged with the adding ''ABORTED BY USER``.
+    As soon as a task has finished or has been aborted, it is no longer possible to change its status.
 
     \subsection{succeeded task}
     \label{task_succeededTask}
@@ -303,6 +309,54 @@ Every method assigns the event to another group.
     If the task with the id doesn't exist, a new log entry will be created with the information that the task wasn't found and logged as event of the group ''error``.
     Furthermore \lstinline|MaiLog.sendErrMsg(String)| will be called with this information.
 
-\section{}
+\section{Log Rotation}
+    To rotate the log files, MaiLogger provides the method \lstinline|MaiLogger.rotate()|
+    Rotation means that the current log file (here,all log files are called $<$mainclass$>$)
+    \begin{description}
+        \item $<$mainclass$>$.log is renamed to $<$mainclass$>$.log.1,
+        \item $<$mainclass$>$.log.1 is renamed to $<$mainclass$>$.log.2 if $<$mainclass$>$.log.1 exists,
+        \item $<$mainclass$>$.log.2 is renamed to $<$mainclass$>$.log.3 if $<$mainclass$>$.log.2 exists
+        \item \tab[5]...
+    \end{description}
+    Afterwards the current logged events will be removed and a new empty log file $<$mainclass$>$.log will be created.
+    If a maximum number of log files has been set (see: \refh{setup_mailogger.setup}{Configure MaiLogger}) and exceeded by a log rotation, the oldest file will deleted.
+
+\section{Further features}
+    \subsection{Load a log file}
+    MaiLogger provides a method \lstinline|MaiLogger.load()| to load a log file.
+    This method loads all log entries of the log file stored in the directory specified by the Configuration of MaiLogger (see: \refh{setup_mailogger.setup}{Configure MaiLogger}).
+    This will override all current existing log entries.
+    If Mailogger hasn't been set up yet, MaiLogger.load() will throw an IllegalStateException.
+
+    \subsection{Get the log entries}
+    MaiLogger provides two methods which return the current log entries:
+    \begin{itemize}
+        \item \lstinline|MaiLogger.getLog(boolean info, boolean warning, boolean error, boolean critical)|
+        \item \lstinline|MaiLogger.getLogAll()|
+    \end{itemize}
+
+    \textbf{MaiLogger.getLog(boolean info, boolean warning, boolean error, boolean critical):} \\
+    This method expects 4 arguments, each one represents the group of which the log entries should be returned. \\
+    E.g: \\
+    \begin{description}
+        \item To get all log entries of the group ''info`` then set info to true: \\ \lstinline| MaiLogger.getLog(true, false, false, false)|
+        \item To get all log entries of the group ''warning`` then set warning to true: \\ \lstinline| MaiLogger.getLog(false, true, false, false)|
+        \item To get all log entries of the group ''info`` and ''error`` then set info and error to true: \\ \lstinline| MaiLogger.getLog(true, false, true, false)|
+        \item \tab[5] $\vdots$
+    \end{description}
+
+    All log entries will be returned in chronologically order. \\
+
+    \textbf{MaiLogger.getLogAll():} \\
+    This method returns all log entries in chronologically order.
+    It is equals to \lstinline|MaiLogger.getLog(true, true, true, true)|
+
+    \subsection{clear log}
+    MaiLogger provides a method to remove all current log entries and tasks.
+    This does not affect the log file.
+
+
+
+
 
 \end{document}
