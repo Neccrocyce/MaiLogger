@@ -159,7 +159,11 @@ public class MaiLogger {
 		Task entry = tasks.remove(id);
 		if (entry == null) {
 			logError("Task with ID " + id + " was not found");
-			mainClass.sendErrMsg("Task with ID " + id + " was not found");
+			if (mainClass == null) {
+				logMissingMainClass();
+			} else {
+				mainClass.sendErrMsg("Task with ID " + id + " was not found");
+			}
 			return;
 		}
 		entry.Succeeded();
@@ -175,7 +179,11 @@ public class MaiLogger {
 		Task entry = tasks.remove(id);
 		if (entry == null) {
 			logError("Task with ID " + id + " was not found");
-			mainClass.sendErrMsg("Task with ID " + id + " was not found");
+			if (mainClass == null) {
+				logMissingMainClass();
+			} else {
+				mainClass.sendErrMsg("Task with ID " + id + " was not found");
+			}
 			return;
 		}
 		entry.setFailed();
@@ -313,7 +321,11 @@ public class MaiLogger {
 		if (!new File(directory).exists()) {
 			boolean newdir = new File(directory).mkdirs();
 			if (!newdir) {
-				mainClass.sendErrMsg("ERROR: Cannot write logs to file: Cannot create directory: " + directory);
+				if (mainClass == null) {
+					throw new IllegalStateException("MaiLogger has not been set up");
+				} else {
+					mainClass.sendErrMsg("ERROR: Cannot write logs to file: Cannot create directory: " + directory);
+				}
 				return;
 			}
 		}
