@@ -1,5 +1,6 @@
 package test;
 
+import logger.Group;
 import logger.MaiLog;
 import logger.MaiLogger;
 import org.junit.*;
@@ -58,10 +59,7 @@ public class TestWithSimpleMainClass {
         assertEquals("", mc.getErrLog());
         assertEquals(1, new File(dir).listFiles().length);
 
-        assertEquals(exp, MaiLogger.getLog(true, false, false, false).substring(18));
-        assertEquals("", MaiLogger.getLog(false, true, false, false));
-        assertEquals("", MaiLogger.getLog(false, false, true, false));
-        assertEquals("", MaiLogger.getLog(false, false, false, true));
+        assertEquals(exp, MaiLogger.getLog(Group.INFO).substring(18));
     }
 
     @Test
@@ -75,10 +73,7 @@ public class TestWithSimpleMainClass {
         assertEquals("", mc.getErrLog());
         assertEquals(1, new File(dir).listFiles().length);
 
-        assertEquals(exp, MaiLogger.getLog(false, true, false, false).substring(18));
-        assertEquals("", MaiLogger.getLog(true, false, false, false));
-        assertEquals("", MaiLogger.getLog(false, false, true, false));
-        assertEquals("", MaiLogger.getLog(false, false, false, true));
+        assertEquals(exp, MaiLogger.getLog(Group.WARNING).substring(18));
     }
 
     @Test
@@ -92,10 +87,7 @@ public class TestWithSimpleMainClass {
         assertEquals("", mc.getErrLog());
         assertEquals(1, new File(dir).listFiles().length);
 
-        assertEquals(exp, MaiLogger.getLog(false, false, true, false).substring(18));
-        assertEquals("", MaiLogger.getLog(true, false, false, false));
-        assertEquals("", MaiLogger.getLog(false, true, false, false));
-        assertEquals("", MaiLogger.getLog(false, false, false, true));
+        assertEquals(exp, MaiLogger.getLog(Group.ERROR).substring(18));
     }
 
     @Test
@@ -110,14 +102,11 @@ public class TestWithSimpleMainClass {
         assertEquals(1, new File(dir).listFiles().length);
         assert(mc.stopped);
 
-        assertEquals(exp, MaiLogger.getLog(false, false, false, true).substring(18));
-        assertEquals("", MaiLogger.getLog(true, false, false, false));
-        assertEquals("", MaiLogger.getLog(false, false, true, false));
-        assertEquals("", MaiLogger.getLog(false, true, false, false));
+        assertEquals(exp, MaiLogger.getLog(Group.CRITICAL).substring(18));
     }
 
     @Test
-    public void test5MultpleLog () {
+    public void test5MultipleLog () {
         MaiLogger.logInfo("test1");
         MaiLogger.logInfo("test2");
         MaiLogger.logWarning("test3");
@@ -128,6 +117,7 @@ public class TestWithSimpleMainClass {
         MaiLogger.logInfo("test8");
         MaiLogger.logWarning("test9");
         MaiLogger.logWarning("test10");
+        MaiLogger.logDebug("test11");
         String exp =
                 "INFO: test1\n"
                 + "INFO: test2\n"
@@ -138,7 +128,8 @@ public class TestWithSimpleMainClass {
                 + "ERROR: test7\n"
                 + "INFO: test8\n"
                 + "WARNING: test9\n"
-                + "WARNING: test10\n";
+                + "WARNING: test10\n"
+                + "DEBUG: test11\n";
         assertEquals(exp, remTime(MaiLogger.getLogAll()));
         assertEquals(exp, remTime(readFile(dir + "/mainclass.log")));
         assertEquals(exp, remTime(mc.getLog()));
@@ -149,10 +140,15 @@ public class TestWithSimpleMainClass {
         String expWarning = "WARNING: test3\nWARNING: test9\nWARNING: test10\n";
         String expError = "ERROR: test4\nERROR: test7\n";
         String expCritical = "CRITICAL: test6\n";
-        assertEquals(expInfo, remTime(MaiLogger.getLog(true, false, false, false)));
-        assertEquals(expWarning, remTime(MaiLogger.getLog(false, true, false, false)));
-        assertEquals(expError, remTime(MaiLogger.getLog(false, false, true, false)));
-        assertEquals(expCritical, remTime(MaiLogger.getLog(false, false, false, true)));
+        String expDebug = "DEBUG: test11\n";
+
+        assertEquals(expInfo, remTime(MaiLogger.getLog(Group.INFO)));
+        assertEquals(expWarning, remTime(MaiLogger.getLog(Group.WARNING)));
+        assertEquals(expError, remTime(MaiLogger.getLog(Group.ERROR)));
+        assertEquals(expCritical, remTime(MaiLogger.getLog(Group.CRITICAL)));
+        assertEquals(expDebug, remTime(MaiLogger.getLog(Group.DEBUG)));
+        assertEquals("", remTime(MaiLogger.getLog(Group.TASK, Group.OTHER)));
+        assertEquals(exp, remTime(MaiLogger.getLog(Group.INFO, Group.DEBUG, Group.WARNING, Group.CRITICAL, Group.ERROR, Group.TASK)));
 
         String expInWa = "INFO: test1\n"
                 + "INFO: test2\n"
@@ -171,9 +167,9 @@ public class TestWithSimpleMainClass {
                 + "INFO: test5\n"
                 + "ERROR: test7\n"
                 + "INFO: test8\n";
-        assertEquals(expInWa, remTime(MaiLogger.getLog(true, true, false, false)));
-        assertEquals(expWaCr, remTime(MaiLogger.getLog(false, true, false, true)));
-        assertEquals(expInEr, remTime(MaiLogger.getLog(true, false, true, false)));
+        assertEquals(expInWa, remTime(MaiLogger.getLog(Group.INFO, Group.WARNING)));
+        assertEquals(expWaCr, remTime(MaiLogger.getLog(Group.WARNING, Group.CRITICAL)));
+        assertEquals(expInEr, remTime(MaiLogger.getLog(Group.ERROR, Group.INFO)));
     }
 
     @Test
@@ -204,7 +200,7 @@ public class TestWithSimpleMainClass {
         MaiLogger.logError("test7");
         MaiLogger.logInfo("test8");
         MaiLogger.logWarning("test9");
-        MaiLogger.logWarning("test10");
+        MaiLogger.logDebug("test10");
         String exp =
                 "INFO: test1\n"
                         + "INFO: test2\n"
@@ -215,7 +211,7 @@ public class TestWithSimpleMainClass {
                         + "ERROR: test7\n"
                         + "INFO: test8\n"
                         + "WARNING: test9\n"
-                        + "WARNING: test10\n";
+                        + "DEBUG: test10\n";
         MaiLogger.clearLog();
         assertEquals("", remTime(MaiLogger.getLogAll()));
         MaiLogger.load();
@@ -238,15 +234,15 @@ public class TestWithSimpleMainClass {
         MaiLogger.rotate();
         MaiLogger.logError("test4");
         MaiLogger.logError("test5");
-        MaiLogger.logInfo("test6");
+        MaiLogger.logDebug("test6");
         assertEquals(3, new File(dir).listFiles().length);
-        assertEquals("ERROR: test4\nERROR: test5\nINFO: test6\n", remTime(readFile(dir + "/" + "mainclass.log")));
+        assertEquals("ERROR: test4\nERROR: test5\nDEBUG: test6\n", remTime(readFile(dir + "/" + "mainclass.log")));
         assertEquals("WARNING: test2\nINFO: test3\n", remTime(readFile(dir + "/" + "mainclass.log.1")));
         assertEquals("INFO: test1\n", remTime(readFile(dir + "/" + "mainclass.log.2")));
         MaiLogger.rotate();
         assertEquals(4, new File(dir).listFiles().length);
         assertEquals("", remTime(readFile(dir + "/" + "mainclass.log")));
-        assertEquals("ERROR: test4\nERROR: test5\nINFO: test6\n", remTime(readFile(dir + "/" + "mainclass.log.1")));
+        assertEquals("ERROR: test4\nERROR: test5\nDEBUG: test6\n", remTime(readFile(dir + "/" + "mainclass.log.1")));
         assertEquals("WARNING: test2\nINFO: test3\n", remTime(readFile(dir + "/" + "mainclass.log.2")));
         assertEquals("INFO: test1\n", remTime(readFile(dir + "/" + "mainclass.log.3")));
         MaiLogger.rotate();
@@ -254,7 +250,7 @@ public class TestWithSimpleMainClass {
         assertEquals(5, new File(dir).listFiles().length);
         assertEquals("CRITICAL: test7\n", remTime(readFile(dir + "/" + "mainclass.log")));
         assertEquals("", remTime(readFile(dir + "/" + "mainclass.log.1")));
-        assertEquals("ERROR: test4\nERROR: test5\nINFO: test6\n", remTime(readFile(dir + "/" + "mainclass.log.2")));
+        assertEquals("ERROR: test4\nERROR: test5\nDEBUG: test6\n", remTime(readFile(dir + "/" + "mainclass.log.2")));
         assertEquals("WARNING: test2\nINFO: test3\n", remTime(readFile(dir + "/" + "mainclass.log.3")));
         assertEquals("INFO: test1\n", remTime(readFile(dir + "/" + "mainclass.log.4")));
     }

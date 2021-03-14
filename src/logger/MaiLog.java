@@ -12,20 +12,20 @@ package logger;
 public interface MaiLog {
 	
 	/**
-	 * This method is called if a critical error occurs it is supposed to stop the running application and exit it.
+	 * This method is called if a critical error occurs and it is supposed to stop the running application and exit it.
 	 */
-	public void stop();
+	void stop();
 
 	/**
 	 * This method will be called if MaiLogger ran into an error. This is usually only the case when an I/O Exception
 	 * occurred during an operation with the log files.
 	 * @param msg the description of the event that led MaiLogger to run into an error
 	 */
-	public void sendErrMsg(String msg);
+	void sendErrMsg(String msg);
 
 	/**
 	 * This method will be called every time an event is logged.
 	 * @param msg the description of the event that should be logged
 	 */
-	public void sendLog(String msg);
+	void sendLog(String msg);
 }

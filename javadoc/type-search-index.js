@@ -1,1 +1,1 @@
-typeSearchIndex = [{"p":"logger","l":"Group"},{"p":"logger","l":"Log"},{"p":"logger","l":"MaiLog"},{"p":"logger","l":"MaiLogger"},{"p":"logger","l":"Task"}]
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"logger","l":"Group"},{"p":"logger","l":"Log"},{"p":"logger","l":"LogCustom"},{"p":"logger","l":"MaiLog"},{"p":"logger","l":"MaiLogger"},{"p":"logger","l":"Task"}]

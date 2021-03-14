@@ -62,31 +62,62 @@ public class MaiLogger {
 	private static boolean time = true;
 
 	/**
+	 * Decides whether tasks will be logged as soon as they start and the status (success/fail/abort) will be logged afterwards or whether tasks will wait until they have been finished or aborted.
+	 * true: Logging at start, false: Logging when finished.
+	 */
+	private static boolean immediateOutput = true;
+
+	/**
 	 * The class which implements the {@code MaiLog} interface
 	 */
-	private static MaiLog mainClass;
+	private static MaiLog mainClass = null;
+
+	/**
+	 * The task which has been started latest and no other event has been logged after that. Otherwise it is null.
+	 */
+	private static Task activeTask = null;
 	
 	/**
-	 * Sets the values which are required to use MaiLogger. Therefore this method has to be called before
-	 * using any other method of this class. If it hasn't been, a warning about
-	 * the missing setup of {@code MaiLogger} is logged, every time an event is logged.
+	 * Sets the values which are required to use MaiLogger. Therefore this method needs to be called before
+	 * using any other method of this class.
 	 *
 	 *
 	 * <pre>
 	 * @param mainClass The class which implements {@code MaiLog} interface
 	 * @param maxLogs The number of maximum logged events
-	 *                It is recommend to set it to -1. Otherwise MaiLogger is less efficient, because of creating a new log file every time an event is logged, instead of adding the event to the end of the existing log file.
-	 *        -1: infinite (recommend)
+	 *                It is recommended to set it to -1. Otherwise MaiLogger is less efficient, because of creating a new log file every time an event is logged, instead of adding the event to the end of the existing log file.
+	 *        -1: infinite (recommended)
 	 *        default: -1
 	 * @param rotations The maximum number of files that are created by log rotation.
 	 *        -1: infinite
-	 *        default -1
-	 * @param time Decides whether the time of logging the event is logged, too
+	 *        default: -1
+	 * @param time Decides whether the time of each event is logged, too
+	 *             default: true
+	 * @param immediateOutput Decides whether tasks will be logged as soon as they start and the status (success/fail/abort) will be logged afterwards or whether tasks will wait until they have been finished or aborted.
+	 *                        default: true
 	 * @param directory The directory in which the log files are saved
-	 *        default ~/../logs
+	 *                  default ~/../logs
+	 * @param logFileName The filename of the logfile
+	 *                    default: name of mainClass or "Log" if no setUp is called
+	 *
 	 * </pre>
-	 * @throws NullPointerException if {@code mainclass} is null
 	 */
+	public static void setUp (MaiLog mainClass, int maxLogs, int rotations, boolean time, boolean immediateOutput, String directory, String logFileName) {
+		MaiLogger.mainClass = mainClass;
+		MaiLogger.maxLogs = maxLogs;
+		MaiLogger.rotations = rotations;
+		MaiLogger.time = time;
+		MaiLogger.immediateOutput = immediateOutput;
+		if (directory != null && !directory.equals("")) {
+			MaiLogger.directory = directory;
+		}
+		fileName = logFileName;
+		if (!new File(directory + "/" + fileName + ".log").exists()) {
+			save();
+		}
+	}
+
+	@Deprecated
 	public static void setUp (MaiLog mainClass, int maxLogs, int rotations, boolean time, String directory) {
 		MaiLogger.mainClass = mainClass;
 		MaiLogger.maxLogs = maxLogs;
@@ -95,41 +126,54 @@ public class MaiLogger {
 		if (directory != null && !directory.equals("")) {
 			MaiLogger.directory = directory;
 		}
-		fileName = mainClass.getClass().getSimpleName().toLowerCase();
+		if (mainClass != null) {
+			fileName = mainClass.getClass().getSimpleName().toLowerCase();
+		}
 		if (!new File(directory + "/" + fileName + ".log").exists()) {
 			save();
 		}
 	}
 
 	/**
-	 * Sets the values which are required to use MaiLogger. Therefore this method has to be called before
-	 * using any other method of this class. If it hasn't been, a warning about
-	 * the missing setup of {@code MaiLogger} is logged, every time an event is logged.
-	 * It sets {@code maxLogs}, {@code rotations} and {@code directory} to default.
+	 * Sets the values which are required to use MaiLogger. Therefore this method needs to be called before
+	 * using any other method of this class. Use this method if it is not intended to implement the {@code MaiLog} interface
 	 *
-	 * @param mainClass The class which implements {@code MaiLog} interface
 	 *
-	 * @throws NullPointerException if {@code mainclass} is null
-	 *
-	 * @see #setUp(MaiLog, int, int, boolean, String)
+	 * <pre>
+	 * @param maxLogs The number of maximum logged events
+	 *                It is recommend to set it to -1. Otherwise MaiLogger is less efficient, because of creating a new log file every time an event is logged, instead of adding the event to the end of the existing log file.
+	 *        -1: infinite (recommend)
+	 *        default: -1
+	 * @param rotations The maximum number of files that are created by log rotation.
+	 *        -1: infinite
+	 *        default -1
+	 * @param time Decides whether the time of each event is logged, too
+	 * @param immediateOutput Decides whether tasks will be logged as soon as they start and the status (success/fail/abort) will be logged afterwards or whether tasks will wait until they have been finished or aborted.
+	 * @param directory The directory in which the log files are saved
+	 *        default ~/../logs
+	 * @param logFileName The filename of the logfile
+	 *                    default: name of mainClass or "Log" if no setUp is called
+	 * </pre>
 	 */
-	public static void setUp (MaiLog mainClass) {
-		setUp(mainClass, -1, -1, true, "");
-	}
-
-	private static void logMissingMainClass () {
-		Log missingMC = new Log(Group.WARNING,"MaiLogger has not been set up yet");
-		log.add(missingMC);
-		try {
-			addLineToFile(missingMC.getLog(time));
-		} catch (NoSuchFileException e) {
-
-		}
-		reduceLog();
+	public static void setUp (int maxLogs, int rotations, boolean time, boolean immediateOutput, String directory, String logFileName) {
+		setUp(null, maxLogs, rotations, time, immediateOutput, directory, logFileName);
 	}
 
 	/**
-	 * This method logs an event to the group "INFO" or "ERROR" and returns an id representing the task.
+	 * Sets the values which are required to use MaiLogger. Therefore this method needs to be called before
+	 * using any other method of this class.
+	 * It sets {@code maxLogs}, {@code rotations}, {@code time}, {@code immediateOutput} and {@code directory} to default.
+	 *
+	 * @param mainClass The class which implements {@code MaiLog} interface
+	 *
+	 * @see #setUp(MaiLog, int, int, boolean, boolean, String, String)
+	 */
+	public static void setUp (MaiLog mainClass) {
+		setUp(mainClass, -1, -1, true, true, "", mainClass.getClass().getSimpleName().toLowerCase());
+	}
+
+	/**
+	 * This method logs a new task to the group "TASK" and returns an id representing the task.
 	 * After the task has finished successfully the method @code{succeededTask(int)} should be called with the given id.
 	 * This call will add "SUCCESS" to the corresponding log entry and will switch it to the group "INFO". <br>
 	 * If the task has failed the method @code{failedTask(int)} should be called with the given id.
@@ -138,14 +182,16 @@ public class MaiLogger {
 	 * @param msg the description of the event that should be logged
 	 * @return the id representing the task
 	 */
-	public static int logTask (String msg) {
+	public static int logNewTask(String msg) {
+		deActiveTask();
 		Task entry = new Task(msg);
 		int id;
-		while (true) {
+		do {
 			id = (int) (Math.random() * Integer.MAX_VALUE);
-			if (tasks.putIfAbsent(id, entry) == null) {
-				break;
-			}
+		} while (tasks.putIfAbsent(id, entry) != null);
+		if (immediateOutput) {
+			MaiLogger.activeTask = entry;
+			logTask(entry);
 		}
 		return id;
 	}
@@ -158,16 +204,13 @@ public class MaiLogger {
 	public static void succeededTask (int id) {
 		Task entry = tasks.remove(id);
 		if (entry == null) {
-			logError("Task with ID " + id + " was not found");
-			if (mainClass == null) {
-				logMissingMainClass();
-			} else {
+			if (mainClass != null) {
 				mainClass.sendErrMsg("Task with ID " + id + " was not found");
 			}
 			return;
 		}
-		entry.Succeeded();
-		log(entry);
+		entry.setSucceeded();
+		logTask(entry);
 	}
 
     /**
@@ -178,16 +221,56 @@ public class MaiLogger {
 	public static void failedTask (int id) {
 		Task entry = tasks.remove(id);
 		if (entry == null) {
-			logError("Task with ID " + id + " was not found");
-			if (mainClass == null) {
-				logMissingMainClass();
-			} else {
+			if (mainClass != null) {
 				mainClass.sendErrMsg("Task with ID " + id + " was not found");
 			}
 			return;
 		}
 		entry.setFailed();
-		log(entry);
+		logTask(entry);
+	}
+
+	/**
+	 * This method sets the attribute {@code activeTask} to null and logs a line break if there was an active task
+	 */
+	private static void deActiveTask () {
+		if (activeTask != null) {
+			try {
+				addLineToFile("");
+			} catch (NoSuchFileException e) {
+				save();
+			}
+			activeTask = null;
+		}
+
+	}
+
+	/**
+	 * This method sets the attribute {@code activeTask} to null and logs a line break if it is not equal {@code task}
+	 * @param task
+	 */
+	private static void deActiveTask (Task task) {
+		if (MaiLogger.activeTask != null && MaiLogger.activeTask != task) {
+			try {
+				addLineToFile("");
+			} catch (NoSuchFileException e) {
+				save();
+			}
+			MaiLogger.activeTask = null;
+		}
+	}
+
+	static boolean equalsActiveTask (Task task) {
+		return activeTask == task;
+	}
+
+	/**
+	 * This method logs an event to the group "DEBUG". This group logs information used for debugging.
+	 * @param msg the description of the event that should be logged
+	 */
+	public static void logDebug (String msg) {
+		deActiveTask();
+		log(new Log(Group.DEBUG,msg));
 	}
 
 	/**
@@ -195,6 +278,7 @@ public class MaiLogger {
 	 * @param msg the description of the event that should be logged
 	 */
 	public static void logInfo (String msg) {
+		deActiveTask();
 		log(new Log(Group.INFO,msg));
 	}
 
@@ -203,6 +287,7 @@ public class MaiLogger {
 	 * @param msg the description of the event that should be logged
 	 */
 	public static void logWarning (String msg) {
+		deActiveTask();
 		log(new Log(Group.WARNING, msg));
 	}
 
@@ -211,6 +296,7 @@ public class MaiLogger {
 	 * @param msg the description of the event that should be logged
 	 */
 	public static void logError (String msg) {
+		deActiveTask();
 		log(new Log(Group.ERROR,msg));
 	}
 	
@@ -220,24 +306,64 @@ public class MaiLogger {
 	 * @param msg the description of the event that should be logged
 	 */
 	public static void logCritical (String msg) {
+		deActiveTask();
 		log(new Log(Group.CRITICAL,msg));
 		on_critical();
-		try {
+		if (mainClass != null) {
 			mainClass.stop();
-		} catch (NullPointerException e) {
-			log(new Log(Group.CRITICAL, "Cannot stop application; MaiLogger has not been set up yet"));
+		}
+	}
+
+	/**
+	 * This method logs an event to a user-defined group.
+	 * @param msg the description of the event that should be logged
+	 * @param group The user-defined group
+	 */
+	public static void logCustom (String msg, String group) {
+		deActiveTask();
+		log(new LogCustom(group, msg));
+	}
+
+
+	private static void logTask(Task entry) {
+		if (!entry.isFinished()) {
+			if (mainClass != null) {
+				mainClass.sendLog(entry.getLogImmediate());
+			}
+			try {
+				addToFile(entry.getLogImmediate());
+			} catch (NoSuchFileException e) {
+				save();
+			}
+		} else {
+			deActiveTask(entry);
+			if (mainClass != null) {
+				mainClass.sendLog(entry.getLog());
+			}
+			log.add(entry);
+			try {
+				addLineToFile(entry.getLogImmediate());
+			} catch (NoSuchFileException e) {
+				save();
+			}
+			if (entry.getGroup() == Group.ERROR && equalsActiveTask(entry)) {
+				try {
+					addLineToFile(entry.getLog());
+				} catch (NoSuchFileException e) {
+					save();
+				}
+			}
+			activeTask = null;
 		}
 	}
 	
 	private static void log (Log entry) {
-		if (mainClass == null) {
-			logMissingMainClass();
-		} else {
-			mainClass.sendLog(entry.getLog(time));
+		if (mainClass != null) {
+			mainClass.sendLog(entry.getLog());
 		}
 		log.add(entry);
 		try {
-			addLineToFile(entry.getLog(time));
+			addLineToFile(entry.getLog());
 		} catch (NoSuchFileException e) {
 			save();
 		}
@@ -264,41 +390,10 @@ public class MaiLogger {
 	 * @return recording of all logged events in chronologically order
 	 */
 	public static String getLogAll () {
-		return getLog(true, true, true, true);
+		StringBuilder content = new StringBuilder();
+		log.forEach(e -> content.append(e.getLog()).append("\n"));
+		return content.toString();
 	}
-
-
-//	public static String getLog (boolean info, boolean warning, boolean error, boolean critical) {
-//		StringBuilder content = new StringBuilder();
-//		for (Log entry : log) {
-//			switch (entry.getGroup()) {
-//			case 0:
-//				if (info) {
-//					content.append(entry.getLog(time));
-//				}
-//				break;
-//			case 1:
-//				if (warning) {
-//					content.append(entry.getLog(time));
-//				}
-//				break;
-//			case 2:
-//				if (error) {
-//					content.append(entry.getLog(time));
-//				}
-//				break;
-//			case 3:
-//				if (critical) {
-//					content.append(entry.getLog(time));
-//				}
-//				break;
-//			}
-//		}
-//		if (content.length() > 0) {
-//			content.deleteCharAt(content.length() - 1);
-//		}
-//		return content.toString();
-//	}
 
 	/**
 	 * This method returns the recording of all logged events of every group for which the parameter is set true. It returns in chronologically order
@@ -308,22 +403,43 @@ public class MaiLogger {
 	 * @param critical group CRITICAL (3)
 	 * @return records of all logged events of the requested group(s)
 	 */
+	@Deprecated
 	public static String getLog (boolean info, boolean warning, boolean error, boolean critical) {
 		StringBuilder content = new StringBuilder();
-		log.stream().filter(e -> (e.getGroup() == 0 && info) || (e.getGroup() == 1 && warning) || (e.getGroup() == 2 && error) || (e.getGroup() == 3 && critical)).forEach(e -> content.append(e.getLog(time)).append("\n"));
+		log.stream().filter(e -> (e.getGroup() == 1 && info) || (e.getGroup() == 2 && warning) || (e.getGroup() == 3 && error) || (e.getGroup() == 4 && critical)).forEach(e -> content.append(e.getLog()).append("\n"));
 		return content.toString();
 	}
 
-	/*
-	writes the {@code log} to file
+	/**
+	 * This method returns the recording of all logged events of every group which is mentioned in {@code groups}. It returns in chronologically order
+	 * @param groups An array of groups for which the logs should be returned
+	 * @return records of all logged events of the requested group(s)
 	 */
-	private static void save () throws IllegalStateException {
+	public static String getLog (int... groups) {
+		StringBuilder content = new StringBuilder();
+		for (Log entry : log) {
+			for (int group : groups) {
+				if (entry.getGroup() == group) {
+					content.append(entry.getLog()).append("\n");
+					break;
+				}
+			}
+		}
+		return content.toString();
+	}
+
+	static boolean isTime() {
+		return time;
+	}
+
+	/*
+        writes the {@code log} to file
+         */
+	private static void save () {
 		if (!new File(directory).exists()) {
 			boolean newdir = new File(directory).mkdirs();
 			if (!newdir) {
-				if (mainClass == null) {
-					throw new IllegalStateException("MaiLogger has not been set up");
-				} else {
+				if (mainClass != null) {
 					mainClass.sendErrMsg("ERROR: Cannot write logs to file: Cannot create directory: " + directory);
 				}
 				return;
@@ -345,10 +461,9 @@ public class MaiLogger {
 			}
 			new File(logFile + ".backup").delete();
 		} catch (IOException e) {
-			if (mainClass == null) {
-				throw new IllegalStateException("MaiLogger has not been set up");
+			if (mainClass != null) {
+				mainClass.sendErrMsg("ERROR: Cannot write logs to file (" + e.toString());
 			}
-			mainClass.sendErrMsg("ERROR: Cannot write logs to file (" + e.toString());
 			e.printStackTrace();
 		} finally {
 			try {
@@ -360,11 +475,11 @@ public class MaiLogger {
 	}
 
 	/**
-	 * This method adds a line to the end of a file.
+	 * This method adds a text to the end of a file without line break.
 	 * @param line the line to add
 	 * @throws NoSuchFileException if the log file does not exist
 	 */
-	private static void addLineToFile (String line) throws NoSuchFileException {
+	private static void addToFile (String line) throws NoSuchFileException {
 		String logfile = directory + "/" + fileName + ".log";
 		if (!new File(logfile).exists()) {
 			throw new NoSuchFileException(logfile + "does not exist");
@@ -372,12 +487,21 @@ public class MaiLogger {
 
 		FileWriter wout;
 		try {
-			wout = new FileWriter(new File(logfile),true);
-			wout.append(line).append("\n");
+			wout = new FileWriter(logfile,true);
+			wout.append(line);
 			wout.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * This method adds a line to the end of a file.
+	 * @param line the line to add
+	 * @throws NoSuchFileException if the log file does not exist
+	 */
+	private static void addLineToFile (String line) throws NoSuchFileException {
+		addToFile(line + "\n");
 	}
 
 	/**
@@ -388,20 +512,18 @@ public class MaiLogger {
 		clearLog();
 		String logFile = directory + "/" + fileName + ".log";
 		if (!new File(logFile).exists()) {
-			if (mainClass == null) {
-				throw new IllegalStateException("MaiLogger has not been set up");
+			if (mainClass != null) {
+				mainClass.sendErrMsg("ERROR: Cannot load logfile: File does not exist");
 			}
-			mainClass.sendErrMsg("ERROR: Cannot load logfile: File does not exist");
 			return;
 		}
 		List<String> lines = new ArrayList<>();
 		try (Stream<String> stream = Files.lines(new File(logFile).toPath())) {
 			stream.forEach(lines::add);
 		} catch (IOException e) {
-			if (mainClass == null) {
-				throw new IllegalStateException("MaiLogger has not been set up");
+			if (mainClass != null) {
+				mainClass.sendErrMsg("ERROR: Cannot load logfile");
 			}
-			mainClass.sendErrMsg("ERROR: Cannot load logfile");
 			return;
 		}
 
@@ -410,12 +532,15 @@ public class MaiLogger {
 			try {
 				String date = time ? string.substring(0,17) : "";
 				String group = time ? string.substring(18).split(": ")[0] : string.split(": ")[0];
-				log.add(new Log(date, group, string.substring(group.length() + (time ? 20 : 2))));
-			} catch (IndexOutOfBoundsException e) {
-				if (mainClass == null) {
-					throw new IllegalStateException("MaiLogger has not been set up");
+				if (Group.getGroupFromString(group) == Group.OTHER) {
+					log.add(new LogCustom(date, group, string.substring(group.length() + (time ? 20 : 2))));
+				} else {
+					log.add(new Log(date, group, string.substring(group.length() + (time ? 20 : 2))));
 				}
-				mainClass.sendErrMsg("ERROR: Cannot load logfile");
+			} catch (IndexOutOfBoundsException e) {
+				if (mainClass != null) {
+					mainClass.sendErrMsg("ERROR: Cannot load logfile");
+				}
 			}
 		}
 	}
@@ -430,20 +555,18 @@ public class MaiLogger {
 	public static void rotate () {
 		File[] files = new File(directory).listFiles(f -> f.getName().startsWith(fileName));
 		if (files == null) {
-			if (mainClass == null) {
-				throw new IllegalStateException("MaiLogger has not been set up");
+			if (mainClass != null) {
+				mainClass.sendErrMsg("ERROR: Cannot rotate: No files in directory");
 			}
-			mainClass.sendErrMsg("ERROR: Cannot rotate: No files in directory");
 			return;
 		}
 		boolean renamed;
 		for (int i = files.length; i > 0; i--) {
 			renamed = files[i-1].renameTo(new File(directory + "/" + fileName + ".log." + i));
 			if (!renamed) {
-				if (mainClass == null) {
-					throw new IllegalStateException("MaiLogger has not been set up");
+				if (mainClass != null) {
+					mainClass.sendErrMsg("ERROR: Cannot rotate: Unable to rename files" + files[files.length - 1]);
 				}
-				mainClass.sendErrMsg("ERROR: Cannot rotate: Unable to rename files" + files[files.length - 1]);
 				return;
 			}
 		}
@@ -452,19 +575,17 @@ public class MaiLogger {
 		if (rotations != -1 && files.length > rotations) {
 			files = new File(directory).listFiles(f -> f.getName().startsWith(fileName));
 			if (files == null) {
-				if (mainClass == null) {
-					throw new IllegalStateException("MaiLogger has not been set up");
+				if (mainClass != null) {
+					mainClass.sendErrMsg("ERROR: Cannot rotate: No files in directory after rotating");
 				}
-				mainClass.sendErrMsg("ERROR: Cannot rotate: No files in directory after rotating");
 				return;
 			}
 			try {
 				files[files.length - 1].delete();
 			} catch (Exception e) {
-				if (mainClass == null) {
-					throw new IllegalStateException("MaiLogger has not been set up");
+				if (mainClass != null) {
+					mainClass.sendErrMsg("ERROR: Cannot delete file" + files[files.length - 1]);
 				}
-				mainClass.sendErrMsg("ERROR: Cannot delete file" + files[files.length - 1]);
 				e.printStackTrace();
 			}
 		}
@@ -500,6 +621,7 @@ public class MaiLogger {
 	 * @param msg reason for the abortion
 	 */
 	private static void abortTasks (String msg) {
+		deActiveTask();
 		for (Map.Entry<Integer,Task> task : tasks.entrySet()) {
 			Task entry = task.getValue();
 			entry.setAbort(msg);

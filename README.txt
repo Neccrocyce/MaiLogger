@@ -1,7 +1,7 @@
 # MaiLogger
 
 MaiLogger is a tool for logging events representing the state of a program. MaiLogger supports following features 
-• Logging 4 groups of events (info, warning, error, critical)
+• Logging 5 groups of events (info, warning, error, critical) and user-defined groups
 • writing logged events to a ﬁle 
 • Setting the folder of that ﬁle
 • Loading log ﬁles
